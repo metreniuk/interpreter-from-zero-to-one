@@ -55,7 +55,7 @@ export class Lexer {
         }
     }
 
-    readIdentifier() {
+    readIdentifier(): Token {
         const start = this.position;
         while (isLetter(this.char)) {
             this.advance();
@@ -66,6 +66,15 @@ export class Lexer {
             return this.createToken(keyword, literal);
         }
         return this.createToken(TokenKind.IDENT, literal);
+    }
+
+    readInteger(): Token {
+        const start = this.position;
+        while (isDigit(this.char)) {
+            this.advance();
+        }
+        const literal = this.input.slice(start, this.position);
+        return this.createToken(TokenKind.INT, literal);
     }
 
     nextToken(): Token {
@@ -106,6 +115,10 @@ export class Lexer {
                     token = this.readIdentifier();
                     return token;
                 }
+                if (isDigit(this.char)) {
+                    token = this.readInteger();
+                    return token;
+                }
                 token = this.createToken(TokenKind.ILLEGAL, this.char);
         }
 
@@ -126,5 +139,12 @@ function isLetter(char: string) {
         (char.charCodeAt(0) >= "A".charCodeAt(0) &&
             char.charCodeAt(0) <= "Z".charCodeAt(0)) ||
         char === "_"
+    );
+}
+
+function isDigit(char: string) {
+    return (
+        char.charCodeAt(0) >= "0".charCodeAt(0) &&
+        char.charCodeAt(0) <= "9".charCodeAt(0)
     );
 }

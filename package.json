@@ -5,7 +5,8 @@
     "main": "index.js",
     "scripts": {
         "lint": "tsc --noEmit",
-        "test": "vitest"
+        "test": "vitest",
+        "test-lexer": "vitest ./src/lexer/lexer.spec.ts"
     },
     "keywords": [],
     "author": "metreniuk@gmail.com",

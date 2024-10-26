@@ -45,6 +45,11 @@ it("tokenizes keywords and identifiers", () => {
         x + y;
     };
     let result = add(5, 10);
+    if (5 < 10) {
+        return true;
+    } else {
+        return false;
+    }
     `;
     const lexer = new Lexer(input);
 
@@ -74,6 +79,26 @@ it("tokenizes keywords and identifiers", () => {
         [TokenKind.COMMA, ","],
         [TokenKind.INT, "10"],
         [TokenKind.RPAREN, ")"],
+        [TokenKind.SEMICOLON, ";"],
+        // more
+        [TokenKind.IF, "if"],
+        [TokenKind.LPAREN, "("],
+        [TokenKind.INT, "5"],
+        [TokenKind.LT, "<"],
+        [TokenKind.INT, "10"],
+        [TokenKind.RPAREN, ")"],
+        [TokenKind.LBRACE, "{"],
+        [TokenKind.RETURN, "return"],
+        [TokenKind.TRUE, "true"],
+        [TokenKind.SEMICOLON, ";"],
+        [TokenKind.RBRACE, "}"],
+        [TokenKind.ELSE, "else"],
+        [TokenKind.LBRACE, "{"],
+        [TokenKind.RETURN, "return"],
+        [TokenKind.FALSE, "false"],
+        [TokenKind.SEMICOLON, ";"],
+        [TokenKind.RBRACE, "}"],
+        [TokenKind.EOF, "<EOF>"],
     ];
     for (let [token, literal] of tokens) {
         const nextToken = lexer.nextToken();

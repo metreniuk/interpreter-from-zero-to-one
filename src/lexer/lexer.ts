@@ -23,6 +23,11 @@ export const TokenKind = {
     // Keywords
     FUNCTION: "FUNCTION",
     LET: "LET",
+    TRUE: "TRUE",
+    FALSE: "FALSE",
+    IF: "IF",
+    ELSE: "ELSE",
+    RETURN: "RETURN",
 } as const;
 type TokenKindKey = keyof typeof TokenKind;
 type TokenKind = (typeof TokenKind)[TokenKindKey];
@@ -39,6 +44,11 @@ export class Lexer {
     keywords: Record<string, TokenKind> = {
         let: TokenKind.LET,
         fn: TokenKind.FUNCTION,
+        true: TokenKind.TRUE,
+        false: TokenKind.FALSE,
+        if: TokenKind.IF,
+        else: TokenKind.ELSE,
+        return: TokenKind.RETURN,
     };
 
     constructor(input: string) {

@@ -7,6 +7,12 @@ export const TokenKind = {
     // Operators
     ASSIGN: "=",
     PLUS: "+",
+    MINUS: "-",
+    BANG: "!",
+    ASTERISK: "*",
+    SLASH: "/",
+    LT: "<",
+    GT: ">",
     // Delimiters
     COMMA: ",",
     SEMICOLON: ";",
@@ -88,6 +94,24 @@ export class Lexer {
                 break;
             case "+":
                 token = this.createToken(TokenKind.PLUS);
+                break;
+            case "-":
+                token = this.createToken(TokenKind.MINUS);
+                break;
+            case "!":
+                token = this.createToken(TokenKind.BANG);
+                break;
+            case "*":
+                token = this.createToken(TokenKind.ASTERISK);
+                break;
+            case "/":
+                token = this.createToken(TokenKind.SLASH);
+                break;
+            case "<":
+                token = this.createToken(TokenKind.LT);
+                break;
+            case ">":
+                token = this.createToken(TokenKind.GT);
                 break;
             case ",":
                 token = this.createToken(TokenKind.COMMA);

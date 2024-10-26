@@ -30,6 +30,10 @@ export class Lexer {
     input: string;
     position: number = 0;
     char: string = "";
+    keywords: Record<string, TokenKind> = {
+        let: TokenKind.LET,
+        fn: TokenKind.FUNCTION,
+    };
 
     constructor(input: string) {
         this.input = input;
@@ -45,8 +49,29 @@ export class Lexer {
         return { kind, literal: literal ?? kind };
     }
 
+    skipWhitespace() {
+        while (isWhitespace(this.char)) {
+            this.advance();
+        }
+    }
+
+    readIdentifier() {
+        const start = this.position;
+        while (isLetter(this.char)) {
+            this.advance();
+        }
+        const literal = this.input.slice(start, this.position);
+        const keyword = this.keywords[literal];
+        if (keyword) {
+            return this.createToken(keyword, literal);
+        }
+        return this.createToken(TokenKind.IDENT, literal);
+    }
+
     nextToken(): Token {
         let token: Token;
+
+        this.skipWhitespace();
 
         switch (this.char) {
             case "=":
@@ -77,6 +102,10 @@ export class Lexer {
                 token = this.createToken(TokenKind.EOF, "<EOF>");
                 break;
             default:
+                if (isLetter(this.char)) {
+                    token = this.readIdentifier();
+                    return token;
+                }
                 token = this.createToken(TokenKind.ILLEGAL, this.char);
         }
 
@@ -84,4 +113,18 @@ export class Lexer {
 
         return token;
     }
+}
+
+function isWhitespace(char: string) {
+    return char === " " || char === "\r" || char === "\t" || char === "\n";
+}
+
+function isLetter(char: string) {
+    return (
+        (char.charCodeAt(0) >= "a".charCodeAt(0) &&
+            char.charCodeAt(0) <= "z".charCodeAt(0)) ||
+        (char.charCodeAt(0) >= "A".charCodeAt(0) &&
+            char.charCodeAt(0) <= "Z".charCodeAt(0)) ||
+        char === "_"
+    );
 }

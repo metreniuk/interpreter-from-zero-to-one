@@ -2,7 +2,12 @@ import { assert, it } from "vitest";
 import { Lexer, TokenKind } from "./lexer";
 
 it("tokenizes operators and delimiters", () => {
-    const lexer = new Lexer("=+(){},;");
+    const input = `
+        =+(){},;
+        !-/*5;
+        5 < 10 > 5;
+    `;
+    const lexer = new Lexer(input);
 
     const tokens = [
         [TokenKind.ASSIGN, "="],
@@ -12,6 +17,19 @@ it("tokenizes operators and delimiters", () => {
         [TokenKind.LBRACE, "{"],
         [TokenKind.RBRACE, "}"],
         [TokenKind.COMMA, ","],
+        [TokenKind.SEMICOLON, ";"],
+        // more
+        [TokenKind.BANG, "!"],
+        [TokenKind.MINUS, "-"],
+        [TokenKind.SLASH, "/"],
+        [TokenKind.ASTERISK, "*"],
+        [TokenKind.INT, "5"],
+        [TokenKind.SEMICOLON, ";"],
+        [TokenKind.INT, "5"],
+        [TokenKind.LT, "<"],
+        [TokenKind.INT, "10"],
+        [TokenKind.GT, ">"],
+        [TokenKind.INT, "5"],
         [TokenKind.SEMICOLON, ";"],
         [TokenKind.EOF, "<EOF>"],
     ];

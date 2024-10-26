@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "lib": ["ESNext"],
+        "skipLibCheck": true,
+        "strict": true
+    }
+}

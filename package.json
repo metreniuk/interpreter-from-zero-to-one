@@ -6,6 +6,7 @@
     "scripts": {
         "lint": "tsc --noEmit",
         "test": "vitest",
+        "repl": "tsx src/repl.ts",
         "test-lexer": "vitest ./src/lexer/lexer.spec.ts"
     },
     "keywords": [],

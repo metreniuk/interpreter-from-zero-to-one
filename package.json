@@ -7,7 +7,8 @@
         "lint": "tsc --noEmit",
         "test": "vitest",
         "repl": "tsx src/repl.ts",
-        "test-lexer": "vitest ./src/lexer/lexer.spec.ts"
+        "test-lexer": "vitest ./src/lexer/lexer.spec.ts",
+        "test-parser": "vitest ./src/parser/parser.spec.ts"
     },
     "keywords": [],
     "author": "metreniuk@gmail.com",

@@ -10,7 +10,7 @@ interface Expression extends Node {
     kind: "Identifier";
 }
 
-class Program implements Node {
+export class Program implements Node {
     statements: Statement[];
 
     constructor(statements: Statement[]) {
@@ -22,7 +22,7 @@ class Program implements Node {
     }
 }
 
-class Identifier implements Expression {
+export class Identifier implements Expression {
     kind: "Identifier" = "Identifier";
 
     value: string;
@@ -37,7 +37,7 @@ class Identifier implements Expression {
     }
 }
 
-class LetStatement implements Statement {
+export class LetStatement implements Statement {
     kind: "LetStatement" = "LetStatement";
 
     name: Identifier;

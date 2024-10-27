@@ -6,6 +6,8 @@ it("tokenizes operators and delimiters", () => {
         =+(){},;
         !-/*5;
         5 < 10 > 5;
+        10 == 10; 
+        10 != 9;
     `;
     const lexer = new Lexer(input);
 
@@ -30,6 +32,14 @@ it("tokenizes operators and delimiters", () => {
         [TokenKind.INT, "10"],
         [TokenKind.GT, ">"],
         [TokenKind.INT, "5"],
+        [TokenKind.SEMICOLON, ";"],
+        [TokenKind.INT, "10"],
+        [TokenKind.EQ, "=="],
+        [TokenKind.INT, "10"],
+        [TokenKind.SEMICOLON, ";"],
+        [TokenKind.INT, "10"],
+        [TokenKind.NOT_EQ, "!="],
+        [TokenKind.INT, "9"],
         [TokenKind.SEMICOLON, ";"],
         [TokenKind.EOF, "<EOF>"],
     ];

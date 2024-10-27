@@ -13,6 +13,8 @@ export const TokenKind = {
     SLASH: "/",
     LT: "<",
     GT: ">",
+    EQ: "==",
+    NOT_EQ: "!=",
     // Delimiters
     COMMA: ",",
     SEMICOLON: ";",
@@ -61,6 +63,10 @@ export class Lexer {
         this.char = this.input[this.position] ?? "";
     }
 
+    peek(): string {
+        return this.input[this.position + 1] ?? "";
+    }
+
     createToken(kind: TokenKind, literal?: string): Token {
         return { kind, literal: literal ?? kind };
     }
@@ -100,7 +106,12 @@ export class Lexer {
 
         switch (this.char) {
             case "=":
-                token = this.createToken(TokenKind.ASSIGN);
+                if (this.peek() === "=") {
+                    this.advance();
+                    token = this.createToken(TokenKind.EQ);
+                } else {
+                    token = this.createToken(TokenKind.ASSIGN);
+                }
                 break;
             case "+":
                 token = this.createToken(TokenKind.PLUS);
@@ -109,7 +120,12 @@ export class Lexer {
                 token = this.createToken(TokenKind.MINUS);
                 break;
             case "!":
-                token = this.createToken(TokenKind.BANG);
+                if (this.peek() === "=") {
+                    this.advance();
+                    token = this.createToken(TokenKind.NOT_EQ);
+                } else {
+                    token = this.createToken(TokenKind.BANG);
+                }
                 break;
             case "*":
                 token = this.createToken(TokenKind.ASTERISK);

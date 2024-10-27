@@ -1,7 +1,8 @@
 import { assert, it } from "vitest";
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { LetStatement } from "../ast/ast";
+import { LetStatement, ReturnStatement } from "../ast/ast";
+import { assertNodeType } from "../ast/utils";
 
 it("parses let statements", () => {
     const input = `
@@ -21,12 +22,25 @@ it("parses let statements", () => {
         const statement = program.statements[i];
         const name = expectedNames[i];
 
-        if (statement instanceof LetStatement) {
-            assert.equal(statement.name.value, name);
-        } else {
-            throw new Error(
-                `Node "${statement.display()}" is not an instance of "LetStatement"`
-            );
-        }
+        assertNodeType(statement, LetStatement);
+        assert.equal(statement.name.value, name);
+    }
+});
+
+it("parses return statements", () => {
+    const input = `
+        return 5;
+        return 10;
+        return 993322;
+   `;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assert.equal(program.statements.length, 3);
+
+    for (let i in program.statements) {
+        const statement = program.statements[i];
+        assertNodeType(statement, ReturnStatement);
     }
 });

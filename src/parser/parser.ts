@@ -1,5 +1,11 @@
 import { Lexer, Token, TokenKind } from "../lexer/lexer";
-import { Identifier, LetStatement, Program, Statement } from "../ast/ast";
+import {
+    Identifier,
+    LetStatement,
+    Program,
+    ReturnStatement,
+    Statement,
+} from "../ast/ast";
 
 export class Parser {
     currToken!: Token;
@@ -58,6 +64,9 @@ export class Parser {
         if (this.currTokenIs(TokenKind.LET)) {
             return this.parseLetStatement();
         }
+        if (this.currTokenIs(TokenKind.RETURN)) {
+            return this.parseReturnStatement();
+        }
         throw new Error(`Unknown statement "${this.currToken.kind}"`);
     }
 
@@ -76,5 +85,17 @@ export class Parser {
 
     parseIdentifier(): Identifier {
         return new Identifier(this.currToken.literal);
+    }
+
+    // return <expression>;
+    parseReturnStatement(): ReturnStatement {
+        this.expectToken(TokenKind.RETURN);
+
+        // TODO: parse expression
+        while (!this.currTokenIs(TokenKind.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return new ReturnStatement(undefined!);
     }
 }

@@ -32,7 +32,7 @@ export const TokenKind = {
     RETURN: "RETURN",
 } as const;
 type TokenKindKey = keyof typeof TokenKind;
-type TokenKind = (typeof TokenKind)[TokenKindKey];
+export type TokenKind = (typeof TokenKind)[TokenKindKey];
 
 export type Token = {
     kind: TokenKind;

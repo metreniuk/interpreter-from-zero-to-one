@@ -1,12 +1,12 @@
-interface Node {
+export interface Node {
     display(): string;
 }
 
-interface Statement extends Node {
+export interface Statement extends Node {
     kind: "LetStatement";
 }
 
-interface Expression extends Node {
+export interface Expression extends Node {
     kind: "Identifier";
 }
 

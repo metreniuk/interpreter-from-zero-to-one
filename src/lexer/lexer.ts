@@ -34,7 +34,7 @@ export const TokenKind = {
 type TokenKindKey = keyof typeof TokenKind;
 type TokenKind = (typeof TokenKind)[TokenKindKey];
 
-type Token = {
+export type Token = {
     kind: TokenKind;
     literal: string;
 };

@@ -3,6 +3,7 @@ import {
     Expression,
     ExpressionStatement,
     Identifier,
+    IntegerLiteral,
     LetStatement,
     Program,
     ReturnStatement,
@@ -24,6 +25,7 @@ export class Parser {
 
         // set-up prefix functions
         this.prefixParseFns.set(TokenKind.IDENT, this.parseIdentifier);
+        this.prefixParseFns.set(TokenKind.INT, this.parseIntegerLiteral);
     }
 
     nextToken() {
@@ -130,4 +132,14 @@ export class Parser {
         const leftExpr = prefixFn();
         return leftExpr;
     }
+
+    parseIntegerLiteral = (): IntegerLiteral => {
+        const value = parseInt(this.currToken.literal, 10);
+        if (!Number.isInteger(value)) {
+            throw new Error(
+                `Unknown IntegerLiteral "${this.currToken.literal}"`
+            );
+        }
+        return new IntegerLiteral(value);
+    };
 }

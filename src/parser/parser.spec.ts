@@ -4,6 +4,7 @@ import { Parser } from "./parser";
 import {
     ExpressionStatement,
     Identifier,
+    IntegerLiteral,
     LetStatement,
     ReturnStatement,
 } from "../ast/ast";
@@ -61,4 +62,20 @@ it("parses identifier expressions", () => {
     assertNodeType(statement, ExpressionStatement);
     assertNodeType(statement.expression, Identifier);
     assert.equal(statement.expression.value, "foobar");
+});
+
+it("parses integer literal expressions", () => {
+    const input = `5;`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assert.equal(program.statements.length, 1);
+
+    const statement = program.statements[0];
+
+    assertNodeType(statement, ExpressionStatement);
+    assertNodeType(statement.expression, IntegerLiteral);
+
+    assert.equal(statement.expression.value, 5);
 });

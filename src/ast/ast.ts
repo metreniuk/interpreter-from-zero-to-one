@@ -7,7 +7,7 @@ export interface Statement extends Node {
 }
 
 export interface Expression extends Node {
-    kind: "Identifier";
+    kind: "Identifier" | "IntegerLiteral";
 }
 
 export class Program implements Node {
@@ -81,5 +81,19 @@ export class ExpressionStatement implements Statement {
     display(): string {
         // ex: foobar;
         return this.expression.display();
+    }
+}
+
+export class IntegerLiteral implements Expression {
+    kind = "IntegerLiteral" as const;
+
+    value: number;
+
+    constructor(value: number) {
+        this.value = value;
+    }
+
+    display(): string {
+        return `${this.value}`;
     }
 }

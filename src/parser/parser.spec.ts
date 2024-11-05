@@ -1,7 +1,12 @@
 import { assert, it } from "vitest";
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { LetStatement, ReturnStatement } from "../ast/ast";
+import {
+    ExpressionStatement,
+    Identifier,
+    LetStatement,
+    ReturnStatement,
+} from "../ast/ast";
 import { assertNodeType } from "../ast/utils";
 
 it("parses let statements", () => {
@@ -43,4 +48,17 @@ it("parses return statements", () => {
         const statement = program.statements[i];
         assertNodeType(statement, ReturnStatement);
     }
+});
+
+it("parses identifier expressions", () => {
+    const input = `foobar;`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+    assert.equal(program.statements.length, 1);
+    const statement = program.statements[0];
+
+    assertNodeType(statement, ExpressionStatement);
+    assertNodeType(statement.expression, Identifier);
+    assert.equal(statement.expression.value, "foobar");
 });

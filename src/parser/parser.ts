@@ -1,5 +1,7 @@
 import { Lexer, Token, TokenKind } from "../lexer/lexer";
 import {
+    Expression,
+    ExpressionStatement,
     Identifier,
     LetStatement,
     Program,
@@ -7,13 +9,21 @@ import {
     Statement,
 } from "../ast/ast";
 
+type PrefixParseFn = () => Expression;
+type InfixParseFn = (left: Expression) => Expression;
+
 export class Parser {
     currToken!: Token;
     peekToken!: Token;
+    prefixParseFns: Map<TokenKind, PrefixParseFn> = new Map();
+    infixParseFns: Map<TokenKind, InfixParseFn> = new Map();
 
     constructor(public lexer: Lexer) {
         this.nextToken();
         this.nextToken();
+
+        // set-up prefix functions
+        this.prefixParseFns.set(TokenKind.IDENT, this.parseIdentifier);
     }
 
     nextToken() {
@@ -67,7 +77,7 @@ export class Parser {
         if (this.currTokenIs(TokenKind.RETURN)) {
             return this.parseReturnStatement();
         }
-        throw new Error(`Unknown statement "${this.currToken.kind}"`);
+        return this.parseExpressionStatement();
     }
 
     // let <identifier> = <expression>;
@@ -83,9 +93,9 @@ export class Parser {
         return new LetStatement(identifier, undefined!);
     }
 
-    parseIdentifier(): Identifier {
+    parseIdentifier = (): Identifier => {
         return new Identifier(this.currToken.literal);
-    }
+    };
 
     // return <expression>;
     parseReturnStatement(): ReturnStatement {
@@ -97,5 +107,27 @@ export class Parser {
         }
 
         return new ReturnStatement(undefined!);
+    }
+
+    parseExpressionStatement(): ExpressionStatement {
+        const expression = this.parseExpression();
+
+        // Note: support missing semicolons for the REPL
+        if (this.peekTokenIs(TokenKind.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return new ExpressionStatement(expression);
+    }
+
+    parseExpression(): Expression {
+        const prefixFn = this.prefixParseFns.get(this.currToken.kind);
+        if (!prefixFn) {
+            throw new Error(
+                `No prefix function for token ${this.currToken.kind}`
+            );
+        }
+        const leftExpr = prefixFn();
+        return leftExpr;
     }
 }

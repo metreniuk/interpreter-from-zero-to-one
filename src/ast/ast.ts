@@ -3,7 +3,7 @@ export interface Node {
 }
 
 export interface Statement extends Node {
-    kind: "LetStatement" | "ReturnStatement";
+    kind: "LetStatement" | "ReturnStatement" | "ExpressionStatement";
 }
 
 export interface Expression extends Node {
@@ -66,5 +66,20 @@ export class ReturnStatement implements Statement {
     display(): string {
         // ex: return foo;
         return `return ${this.returnValue.display()};`;
+    }
+}
+
+export class ExpressionStatement implements Statement {
+    kind = "ExpressionStatement" as const;
+
+    expression: Expression;
+
+    constructor(expression: Expression) {
+        this.expression = expression;
+    }
+
+    display(): string {
+        // ex: foobar;
+        return this.expression.display();
     }
 }

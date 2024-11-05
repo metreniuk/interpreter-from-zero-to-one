@@ -4,12 +4,11 @@ import { Parser } from "./parser";
 import {
     ExpressionStatement,
     Identifier,
-    IntegerLiteral,
     LetStatement,
     PrefixExpression,
     ReturnStatement,
 } from "../ast/ast";
-import { assertNodeType } from "../ast/utils";
+import { assertIntegerLiteral, assertNodeType } from "../ast/utils";
 
 it("parses let statements", () => {
     const input = `
@@ -76,9 +75,8 @@ it("parses integer literal expressions", () => {
     const statement = program.statements[0];
 
     assertNodeType(statement, ExpressionStatement);
-    assertNodeType(statement.expression, IntegerLiteral);
 
-    assert.equal(statement.expression.value, 5);
+    assertIntegerLiteral(statement.expression, 5);
 });
 
 it("parses prefix expression", () => {
@@ -101,7 +99,6 @@ it("parses prefix expression", () => {
 
         assert.equal(statement.expression.operator, operator);
 
-        assertNodeType(statement.expression.right, IntegerLiteral);
-        assert.equal(statement.expression.right.value, value);
+        assertIntegerLiteral(statement.expression.right, value);
     }
 });

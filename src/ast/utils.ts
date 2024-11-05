@@ -1,4 +1,5 @@
-import { Node } from "./ast";
+import { assert } from "vitest";
+import { Expression, IntegerLiteral, Node } from "./ast";
 
 export function assertNodeType<T extends Node>(
     value: Node,
@@ -11,4 +12,12 @@ export function assertNodeType<T extends Node>(
             }`
         );
     }
+}
+
+export function assertIntegerLiteral(
+    expression: Expression,
+    expectedValue: number
+) {
+    assertNodeType(expression, IntegerLiteral);
+    assert.equal(expression.value, expectedValue);
 }

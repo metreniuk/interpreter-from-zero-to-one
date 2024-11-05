@@ -5,6 +5,7 @@ import {
     Identifier,
     IntegerLiteral,
     LetStatement,
+    PrefixExpression,
     Program,
     ReturnStatement,
     Statement,
@@ -26,6 +27,8 @@ export class Parser {
         // set-up prefix functions
         this.prefixParseFns.set(TokenKind.IDENT, this.parseIdentifier);
         this.prefixParseFns.set(TokenKind.INT, this.parseIntegerLiteral);
+        this.prefixParseFns.set(TokenKind.BANG, this.parsePrefixExpression);
+        this.prefixParseFns.set(TokenKind.MINUS, this.parsePrefixExpression);
     }
 
     nextToken() {
@@ -141,5 +144,14 @@ export class Parser {
             );
         }
         return new IntegerLiteral(value);
+    };
+
+    // !10
+    // -5
+    parsePrefixExpression = (): PrefixExpression => {
+        const operator = this.currToken.literal;
+        this.nextToken();
+        const right = this.parseExpression();
+        return new PrefixExpression(operator, right);
     };
 }

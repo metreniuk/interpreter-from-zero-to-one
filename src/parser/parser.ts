@@ -3,6 +3,7 @@ import {
     Expression,
     ExpressionStatement,
     Identifier,
+    InfixExpression,
     IntegerLiteral,
     LetStatement,
     PrefixExpression,
@@ -29,6 +30,16 @@ export class Parser {
         this.prefixParseFns.set(TokenKind.INT, this.parseIntegerLiteral);
         this.prefixParseFns.set(TokenKind.BANG, this.parsePrefixExpression);
         this.prefixParseFns.set(TokenKind.MINUS, this.parsePrefixExpression);
+        // set-up prefix functions
+        this.infixParseFns.set(TokenKind.PLUS, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.MINUS, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.BANG, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.ASTERISK, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.SLASH, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.LT, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.GT, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.EQ, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.NOT_EQ, this.parseInfixExpression);
     }
 
     nextToken() {
@@ -132,7 +143,18 @@ export class Parser {
                 `No prefix function for token ${this.currToken.kind}`
             );
         }
-        const leftExpr = prefixFn();
+        let leftExpr = prefixFn();
+
+        while (!this.peekTokenIs(TokenKind.SEMICOLON)) {
+            const infixFn = this.infixParseFns.get(this.peekToken.kind);
+            if (!infixFn) {
+                return leftExpr;
+            }
+            this.nextToken();
+            const rightExpr = infixFn(leftExpr);
+            leftExpr = rightExpr;
+        }
+
         return leftExpr;
     }
 
@@ -153,5 +175,14 @@ export class Parser {
         this.nextToken();
         const right = this.parseExpression();
         return new PrefixExpression(operator, right);
+    };
+
+    // 1 + 3
+    // 3 != 1
+    parseInfixExpression = (left: Expression): InfixExpression => {
+        const operator = this.currToken.literal;
+        this.nextToken();
+        const right = this.parseExpression();
+        return new InfixExpression(operator, left, right);
     };
 }

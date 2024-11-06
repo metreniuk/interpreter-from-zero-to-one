@@ -4,6 +4,7 @@ import { Parser } from "./parser";
 import {
     ExpressionStatement,
     Identifier,
+    InfixExpression,
     LetStatement,
     PrefixExpression,
     ReturnStatement,
@@ -100,5 +101,31 @@ it("parses prefix expression", () => {
         assert.equal(statement.expression.operator, operator);
 
         assertIntegerLiteral(statement.expression.right, value);
+    }
+});
+
+it("parses infix expression", () => {
+    const inputs = [
+        { input: "5 + 5;", leftValue: 5, operator: "+", rightValue: 5 },
+        { input: "5 - 5;", leftValue: 5, operator: "-", rightValue: 5 },
+        { input: "5 * 5;", leftValue: 5, operator: "*", rightValue: 5 },
+        { input: "5 / 5;", leftValue: 5, operator: "/", rightValue: 5 },
+        { input: "5 > 5;", leftValue: 5, operator: ">", rightValue: 5 },
+        { input: "5 < 5;", leftValue: 5, operator: "<", rightValue: 5 },
+        { input: "5 == 5;", leftValue: 5, operator: "==", rightValue: 5 },
+        { input: "5 != 5;", leftValue: 5, operator: "!=", rightValue: 5 },
+    ];
+    for (const { input, operator, leftValue, rightValue } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+        assert.equal(program.statements.length, 1);
+        const statement = program.statements[0];
+        assertNodeType(statement, ExpressionStatement);
+        assertNodeType(statement.expression, InfixExpression);
+
+        assert.equal(statement.expression.operator, operator);
+        assertIntegerLiteral(statement.expression.left, leftValue);
+        assertIntegerLiteral(statement.expression.right, rightValue);
     }
 });

@@ -7,7 +7,11 @@ export interface Statement extends Node {
 }
 
 export interface Expression extends Node {
-    kind: "Identifier" | "IntegerLiteral" | "PrefixExpression";
+    kind:
+        | "Identifier"
+        | "IntegerLiteral"
+        | "PrefixExpression"
+        | "InfixExpression";
 }
 
 export class Program implements Node {
@@ -111,5 +115,25 @@ export class PrefixExpression implements Expression {
 
     display(): string {
         return `(${this.operator}${this.right.display()})`;
+    }
+}
+
+export class InfixExpression implements Expression {
+    kind = "InfixExpression" as const;
+
+    operator: string;
+    left: Expression;
+    right: Expression;
+
+    constructor(operator: string, left: Expression, right: Expression) {
+        this.operator = operator;
+        this.left = left;
+        this.right = right;
+    }
+
+    display(): string {
+        return `(${this.left.display()} ${
+            this.operator
+        } ${this.right.display()})`;
     }
 }

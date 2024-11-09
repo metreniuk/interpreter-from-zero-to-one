@@ -129,3 +129,38 @@ it("parses infix expression", () => {
         assertIntegerLiteral(statement.expression.right, rightValue);
     }
 });
+
+it("parses expressions with precedence", () => {
+    const inputs = [
+        { input: "!-a", expected: "(!(-a))" },
+        { input: "a + b / c", expected: "(a + (b / c))" },
+        { input: "a * -b", expected: "(a * (-b))" },
+        { input: "a + b + c", expected: "((a + b) + c)" },
+        { input: "a + b - c", expected: "((a + b) - c)" },
+        { input: "a * b * c", expected: "((a * b) * c)" },
+        { input: "a * b / c", expected: "((a * b) / c)" },
+        {
+            input: "a + b * c + d / e - f",
+            expected: "(((a + (b * c)) + (d / e)) - f)",
+        },
+        { input: "3 + 4; -5 * 5", expected: "(3 + 4)((-5) * 5)" },
+        { input: "5 > 4 == 3 < 4", expected: "((5 > 4) == (3 < 4))" },
+        { input: "5 < 4 != 3 > 4", expected: "((5 < 4) != (3 > 4))" },
+        {
+            input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+        {
+            input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+
+        assert.equal(program.display(), expected);
+    }
+});

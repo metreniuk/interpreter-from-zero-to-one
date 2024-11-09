@@ -15,6 +15,26 @@ import {
 type PrefixParseFn = () => Expression;
 type InfixParseFn = (left: Expression) => Expression;
 
+enum Precedence {
+    LOWEST = 0,
+    EQUALS = 1,
+    COMPARE = 2,
+    SUM = 3,
+    PRODUCT = 4,
+    PREFIX = 5,
+    CALL = 6,
+}
+const precedences = new Map<TokenKind, Precedence>([
+    [TokenKind.EQ, Precedence.EQUALS],
+    [TokenKind.NOT_EQ, Precedence.EQUALS],
+    [TokenKind.LT, Precedence.COMPARE],
+    [TokenKind.GT, Precedence.COMPARE],
+    [TokenKind.PLUS, Precedence.SUM],
+    [TokenKind.MINUS, Precedence.SUM],
+    [TokenKind.SLASH, Precedence.PRODUCT],
+    [TokenKind.ASTERISK, Precedence.PRODUCT],
+]);
+
 export class Parser {
     currToken!: Token;
     peekToken!: Token;
@@ -75,6 +95,14 @@ export class Parser {
         }
     }
 
+    currPrecedence(): Precedence {
+        return precedences.get(this.currToken.kind) ?? Precedence.LOWEST;
+    }
+
+    peekPrecedence(): Precedence {
+        return precedences.get(this.peekToken.kind) ?? Precedence.LOWEST;
+    }
+
     parseProgram(): Program {
         const statements = [];
 
@@ -126,7 +154,7 @@ export class Parser {
     }
 
     parseExpressionStatement(): ExpressionStatement {
-        const expression = this.parseExpression();
+        const expression = this.parseExpression(Precedence.LOWEST);
 
         // Note: support missing semicolons for the REPL
         if (this.peekTokenIs(TokenKind.SEMICOLON)) {
@@ -136,7 +164,7 @@ export class Parser {
         return new ExpressionStatement(expression);
     }
 
-    parseExpression(): Expression {
+    parseExpression(precedence: Precedence): Expression {
         const prefixFn = this.prefixParseFns.get(this.currToken.kind);
         if (!prefixFn) {
             throw new Error(
@@ -145,7 +173,10 @@ export class Parser {
         }
         let leftExpr = prefixFn();
 
-        while (!this.peekTokenIs(TokenKind.SEMICOLON)) {
+        while (
+            !this.peekTokenIs(TokenKind.SEMICOLON) &&
+            precedence < this.peekPrecedence()
+        ) {
             const infixFn = this.infixParseFns.get(this.peekToken.kind);
             if (!infixFn) {
                 return leftExpr;
@@ -173,7 +204,7 @@ export class Parser {
     parsePrefixExpression = (): PrefixExpression => {
         const operator = this.currToken.literal;
         this.nextToken();
-        const right = this.parseExpression();
+        const right = this.parseExpression(Precedence.PREFIX);
         return new PrefixExpression(operator, right);
     };
 
@@ -181,8 +212,9 @@ export class Parser {
     // 3 != 1
     parseInfixExpression = (left: Expression): InfixExpression => {
         const operator = this.currToken.literal;
+        const precedence = this.currPrecedence();
         this.nextToken();
-        const right = this.parseExpression();
+        const right = this.parseExpression(precedence);
         return new InfixExpression(operator, left, right);
     };
 }

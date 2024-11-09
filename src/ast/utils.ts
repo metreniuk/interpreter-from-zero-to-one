@@ -3,6 +3,7 @@ import {
     BooleanLiteral,
     Expression,
     Identifier,
+    InfixExpression,
     IntegerLiteral,
     Node,
 } from "./ast";
@@ -22,7 +23,7 @@ export function assertNodeType<T extends Node>(
 
 export function assertLiteral(
     expression: Expression,
-    expectedValue: number | string | boolean
+    expectedValue: ExpectedNodeValue
 ) {
     const expectedType = typeof expectedValue;
 
@@ -40,4 +41,18 @@ export function assertLiteral(
             `Unknown literal type "${expectedType}" of expected value "${expectedValue}"`
         );
     }
+}
+
+export type ExpectedNodeValue = number | string | boolean;
+
+export function assertInfix(
+    expression: Expression,
+    leftValue: ExpectedNodeValue,
+    operator: string,
+    rightValue: ExpectedNodeValue
+) {
+    assertNodeType(expression, InfixExpression);
+    assert.equal(expression.operator, operator);
+    assertLiteral(expression.left, leftValue);
+    assertLiteral(expression.right, rightValue);
 }

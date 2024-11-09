@@ -3,12 +3,11 @@ import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
 import {
     ExpressionStatement,
-    InfixExpression,
     LetStatement,
     PrefixExpression,
     ReturnStatement,
 } from "../ast/ast";
-import { assertLiteral, assertNodeType } from "../ast/utils";
+import { assertInfix, assertLiteral, assertNodeType } from "../ast/utils";
 
 it("parses let statements", () => {
     const input = `
@@ -138,11 +137,8 @@ it("parses infix expression", () => {
         assert.equal(program.statements.length, 1);
         const statement = program.statements[0];
         assertNodeType(statement, ExpressionStatement);
-        assertNodeType(statement.expression, InfixExpression);
 
-        assert.equal(statement.expression.operator, operator);
-        assertLiteral(statement.expression.left, leftValue);
-        assertLiteral(statement.expression.right, rightValue);
+        assertInfix(statement.expression, leftValue, operator, rightValue);
     }
 });
 

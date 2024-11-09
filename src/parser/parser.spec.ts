@@ -3,13 +3,12 @@ import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
 import {
     ExpressionStatement,
-    Identifier,
     InfixExpression,
     LetStatement,
     PrefixExpression,
     ReturnStatement,
 } from "../ast/ast";
-import { assertIntegerLiteral, assertNodeType } from "../ast/utils";
+import { assertLiteral, assertNodeType } from "../ast/utils";
 
 it("parses let statements", () => {
     const input = `
@@ -61,8 +60,7 @@ it("parses identifier expressions", () => {
     const statement = program.statements[0];
 
     assertNodeType(statement, ExpressionStatement);
-    assertNodeType(statement.expression, Identifier);
-    assert.equal(statement.expression.value, "foobar");
+    assertLiteral(statement.expression, "foobar");
 });
 
 it("parses integer literal expressions", () => {
@@ -77,7 +75,7 @@ it("parses integer literal expressions", () => {
 
     assertNodeType(statement, ExpressionStatement);
 
-    assertIntegerLiteral(statement.expression, 5);
+    assertLiteral(statement.expression, 5);
 });
 
 it("parses prefix expression", () => {
@@ -100,7 +98,7 @@ it("parses prefix expression", () => {
 
         assert.equal(statement.expression.operator, operator);
 
-        assertIntegerLiteral(statement.expression.right, value);
+        assertLiteral(statement.expression.right, value);
     }
 });
 
@@ -114,6 +112,24 @@ it("parses infix expression", () => {
         { input: "5 < 5;", leftValue: 5, operator: "<", rightValue: 5 },
         { input: "5 == 5;", leftValue: 5, operator: "==", rightValue: 5 },
         { input: "5 != 5;", leftValue: 5, operator: "!=", rightValue: 5 },
+        {
+            input: "true == true;",
+            leftValue: true,
+            operator: "==",
+            rightValue: true,
+        },
+        {
+            input: "true != false;",
+            leftValue: true,
+            operator: "!=",
+            rightValue: false,
+        },
+        {
+            input: "false == false;",
+            leftValue: false,
+            operator: "==",
+            rightValue: false,
+        },
     ];
     for (const { input, operator, leftValue, rightValue } of inputs) {
         const lexer = new Lexer(input);
@@ -125,8 +141,8 @@ it("parses infix expression", () => {
         assertNodeType(statement.expression, InfixExpression);
 
         assert.equal(statement.expression.operator, operator);
-        assertIntegerLiteral(statement.expression.left, leftValue);
-        assertIntegerLiteral(statement.expression.right, rightValue);
+        assertLiteral(statement.expression.left, leftValue);
+        assertLiteral(statement.expression.right, rightValue);
     }
 });
 
@@ -153,6 +169,14 @@ it("parses expressions with precedence", () => {
         {
             input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
             expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+        {
+            input: "3 > 5 == false",
+            expected: "((3 > 5) == false)",
+        },
+        {
+            input: "3 < 5 == true",
+            expected: "((3 < 5) == true)",
         },
     ];
 

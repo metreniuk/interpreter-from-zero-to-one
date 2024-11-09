@@ -1,5 +1,11 @@
 import { assert } from "vitest";
-import { Expression, IntegerLiteral, Node } from "./ast";
+import {
+    BooleanLiteral,
+    Expression,
+    Identifier,
+    IntegerLiteral,
+    Node,
+} from "./ast";
 
 export function assertNodeType<T extends Node>(
     value: Node,
@@ -14,10 +20,24 @@ export function assertNodeType<T extends Node>(
     }
 }
 
-export function assertIntegerLiteral(
+export function assertLiteral(
     expression: Expression,
-    expectedValue: number
+    expectedValue: number | string | boolean
 ) {
-    assertNodeType(expression, IntegerLiteral);
-    assert.equal(expression.value, expectedValue);
+    const expectedType = typeof expectedValue;
+
+    if (expectedType === "number") {
+        assertNodeType(expression, IntegerLiteral);
+        assert.equal(expression.value, expectedValue);
+    } else if (expectedType === "string") {
+        assertNodeType(expression, Identifier);
+        assert.equal(expression.value, expectedValue);
+    } else if (expectedType === "boolean") {
+        assertNodeType(expression, BooleanLiteral);
+        assert.equal(expression.value, expectedValue);
+    } else {
+        throw new Error(
+            `Unknown literal type "${expectedType}" of expected value "${expectedValue}"`
+        );
+    }
 }

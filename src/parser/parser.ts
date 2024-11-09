@@ -1,5 +1,6 @@
 import { Lexer, Token, TokenKind } from "../lexer/lexer";
 import {
+    BooleanLiteral,
     Expression,
     ExpressionStatement,
     Identifier,
@@ -48,6 +49,8 @@ export class Parser {
         // set-up prefix functions
         this.prefixParseFns.set(TokenKind.IDENT, this.parseIdentifier);
         this.prefixParseFns.set(TokenKind.INT, this.parseIntegerLiteral);
+        this.prefixParseFns.set(TokenKind.TRUE, this.parseBooleanLiteral);
+        this.prefixParseFns.set(TokenKind.FALSE, this.parseBooleanLiteral);
         this.prefixParseFns.set(TokenKind.BANG, this.parsePrefixExpression);
         this.prefixParseFns.set(TokenKind.MINUS, this.parsePrefixExpression);
         // set-up prefix functions
@@ -197,6 +200,11 @@ export class Parser {
             );
         }
         return new IntegerLiteral(value);
+    };
+
+    parseBooleanLiteral = (): BooleanLiteral => {
+        const value = this.currTokenIs(TokenKind.TRUE);
+        return new BooleanLiteral(value);
     };
 
     // !10

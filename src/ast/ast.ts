@@ -10,6 +10,7 @@ export interface Expression extends Node {
     kind:
         | "Identifier"
         | "IntegerLiteral"
+        | "BooleanLiteral"
         | "PrefixExpression"
         | "InfixExpression";
 }
@@ -94,6 +95,20 @@ export class IntegerLiteral implements Expression {
     value: number;
 
     constructor(value: number) {
+        this.value = value;
+    }
+
+    display(): string {
+        return `${this.value}`;
+    }
+}
+
+export class BooleanLiteral implements Expression {
+    kind = "BooleanLiteral" as const;
+
+    value: boolean;
+
+    constructor(value: boolean) {
         this.value = value;
     }
 

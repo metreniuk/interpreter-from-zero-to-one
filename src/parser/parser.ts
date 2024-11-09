@@ -53,6 +53,7 @@ export class Parser {
         this.prefixParseFns.set(TokenKind.FALSE, this.parseBooleanLiteral);
         this.prefixParseFns.set(TokenKind.BANG, this.parsePrefixExpression);
         this.prefixParseFns.set(TokenKind.MINUS, this.parsePrefixExpression);
+        this.prefixParseFns.set(TokenKind.LPAREN, this.parseGroupedExpression);
         // set-up prefix functions
         this.infixParseFns.set(TokenKind.PLUS, this.parseInfixExpression);
         this.infixParseFns.set(TokenKind.MINUS, this.parseInfixExpression);
@@ -224,5 +225,16 @@ export class Parser {
         this.nextToken();
         const right = this.parseExpression(precedence);
         return new InfixExpression(operator, left, right);
+    };
+
+    // (<expression>)
+    parseGroupedExpression = (): Expression => {
+        this.expectToken(TokenKind.LPAREN);
+
+        const expression = this.parseExpression(Precedence.LOWEST);
+
+        this.expectPeek(TokenKind.RPAREN);
+
+        return expression;
     };
 }

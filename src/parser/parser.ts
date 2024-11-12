@@ -1,9 +1,11 @@
 import { Lexer, Token, TokenKind } from "../lexer/lexer";
 import {
+    BlockStatement,
     BooleanLiteral,
     Expression,
     ExpressionStatement,
     Identifier,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -54,6 +56,7 @@ export class Parser {
         this.prefixParseFns.set(TokenKind.BANG, this.parsePrefixExpression);
         this.prefixParseFns.set(TokenKind.MINUS, this.parsePrefixExpression);
         this.prefixParseFns.set(TokenKind.LPAREN, this.parseGroupedExpression);
+        this.prefixParseFns.set(TokenKind.IF, this.parseIfExpression);
         // set-up prefix functions
         this.infixParseFns.set(TokenKind.PLUS, this.parseInfixExpression);
         this.infixParseFns.set(TokenKind.MINUS, this.parseInfixExpression);
@@ -236,5 +239,42 @@ export class Parser {
         this.expectPeek(TokenKind.RPAREN);
 
         return expression;
+    };
+
+    // if (<expression>) <block-statement> [else <block-statement>]
+    parseIfExpression = (): IfExpression => {
+        this.expectToken(TokenKind.IF);
+        this.expectToken(TokenKind.LPAREN);
+
+        const condition = this.parseExpression(Precedence.LOWEST);
+
+        this.expectPeek(TokenKind.RPAREN);
+        this.expectPeek(TokenKind.LBRACE);
+
+        const consequence = this.parseBlockStatement();
+
+        let alternative = undefined;
+        if (this.peekTokenIs(TokenKind.ELSE)) {
+            this.expectPeek(TokenKind.ELSE);
+            this.expectPeek(TokenKind.LBRACE);
+            alternative = this.parseBlockStatement();
+        }
+
+        return new IfExpression(condition, consequence, alternative);
+    };
+
+    parseBlockStatement = (): BlockStatement => {
+        this.expectToken(TokenKind.LBRACE);
+        const statements: Statement[] = [];
+
+        while (
+            !this.currTokenIs(TokenKind.RBRACE) &&
+            !this.currTokenIs(TokenKind.EOF)
+        ) {
+            statements.push(this.parseStatement());
+            this.nextToken();
+        }
+
+        return new BlockStatement(statements);
     };
 }

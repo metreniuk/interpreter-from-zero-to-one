@@ -3,7 +3,11 @@ export interface Node {
 }
 
 export interface Statement extends Node {
-    kind: "LetStatement" | "ReturnStatement" | "ExpressionStatement";
+    kind:
+        | "LetStatement"
+        | "ReturnStatement"
+        | "ExpressionStatement"
+        | "BlockStatement";
 }
 
 export interface Expression extends Node {
@@ -12,7 +16,8 @@ export interface Expression extends Node {
         | "IntegerLiteral"
         | "BooleanLiteral"
         | "PrefixExpression"
-        | "InfixExpression";
+        | "InfixExpression"
+        | "IfExpression";
 }
 
 export class Program implements Node {
@@ -150,5 +155,50 @@ export class InfixExpression implements Expression {
         return `(${this.left.display()} ${
             this.operator
         } ${this.right.display()})`;
+    }
+}
+
+export class BlockStatement implements Statement {
+    kind = "BlockStatement" as const;
+
+    statements: Statement[];
+
+    constructor(statements: Statement[]) {
+        this.statements = statements;
+    }
+
+    display(): string {
+        let str = "{ ";
+        for (let stm of this.statements) {
+            str += stm.display();
+        }
+        str += " }";
+        return str;
+    }
+}
+
+export class IfExpression implements Expression {
+    kind = "IfExpression" as const;
+
+    condition: Expression;
+    consequence: BlockStatement;
+    alternative: BlockStatement | undefined;
+
+    constructor(
+        condition: Expression,
+        consequence: BlockStatement,
+        alternative: BlockStatement | undefined
+    ) {
+        this.condition = condition;
+        this.consequence = consequence;
+        this.alternative = alternative;
+    }
+
+    display(): string {
+        let str = `if ${this.condition.display()} ${this.consequence.display()}`;
+        if (this.alternative) {
+            str += `else ${this.alternative.display()}`;
+        }
+        return str;
     }
 }

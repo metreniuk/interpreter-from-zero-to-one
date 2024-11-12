@@ -3,6 +3,7 @@ import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
 import {
     ExpressionStatement,
+    IfExpression,
     LetStatement,
     PrefixExpression,
     ReturnStatement,
@@ -203,4 +204,48 @@ it("parses expressions with precedence", () => {
 
         assert.equal(program.display(), expected);
     }
+});
+
+it("parses if expressions", () => {
+    const input = `if (x < y) { x }`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assert.equal(program.statements.length, 1);
+    const statement = program.statements[0];
+
+    assertNodeType(statement, ExpressionStatement);
+
+    const { expression } = statement;
+    assertNodeType(expression, IfExpression);
+    assertInfix(expression.condition, "x", "<", "y");
+
+    assert.equal(expression.consequence.statements.length, 1);
+    assertNodeType(expression.consequence.statements[0], ExpressionStatement);
+    assertLiteral(expression.consequence.statements[0].expression, "x");
+});
+
+it("parses if expressions with alternative", () => {
+    const input = `if (x < y) { x } else { y }`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assert.equal(program.statements.length, 1);
+    const statement = program.statements[0];
+
+    assertNodeType(statement, ExpressionStatement);
+
+    const { expression } = statement;
+    assertNodeType(expression, IfExpression);
+    assertInfix(expression.condition, "x", "<", "y");
+
+    assert.equal(expression.consequence.statements.length, 1);
+    assertNodeType(expression.consequence.statements[0], ExpressionStatement);
+    assertLiteral(expression.consequence.statements[0].expression, "x");
+
+    assert.equal(expression.alternative!.statements.length, 1);
+    assertNodeType(expression.alternative!.statements[0], ExpressionStatement);
+    assertLiteral(expression.alternative!.statements[0].expression, "y");
 });

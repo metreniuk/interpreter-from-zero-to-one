@@ -17,7 +17,8 @@ export interface Expression extends Node {
         | "BooleanLiteral"
         | "PrefixExpression"
         | "InfixExpression"
-        | "IfExpression";
+        | "IfExpression"
+        | "FunctionLiteral";
 }
 
 export class Program implements Node {
@@ -200,5 +201,23 @@ export class IfExpression implements Expression {
             str += `else ${this.alternative.display()}`;
         }
         return str;
+    }
+}
+
+export class FunctionLiteral implements Expression {
+    kind = "FunctionLiteral" as const;
+
+    parameters: Identifier[];
+    body: BlockStatement;
+
+    constructor(parameters: Identifier[], body: BlockStatement) {
+        this.parameters = parameters;
+        this.body = body;
+    }
+
+    display(): string {
+        return `fn (${this.parameters
+            .map((x) => x.display())
+            .join(", ")}) ${this.body.display()}`;
     }
 }

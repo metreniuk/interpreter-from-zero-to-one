@@ -4,6 +4,7 @@ import {
     BooleanLiteral,
     Expression,
     ExpressionStatement,
+    FunctionLiteral,
     Identifier,
     IfExpression,
     InfixExpression,
@@ -57,6 +58,7 @@ export class Parser {
         this.prefixParseFns.set(TokenKind.MINUS, this.parsePrefixExpression);
         this.prefixParseFns.set(TokenKind.LPAREN, this.parseGroupedExpression);
         this.prefixParseFns.set(TokenKind.IF, this.parseIfExpression);
+        this.prefixParseFns.set(TokenKind.FUNCTION, this.parseFunctionLiteral);
         // set-up prefix functions
         this.infixParseFns.set(TokenKind.PLUS, this.parseInfixExpression);
         this.infixParseFns.set(TokenKind.MINUS, this.parseInfixExpression);
@@ -276,5 +278,40 @@ export class Parser {
         }
 
         return new BlockStatement(statements);
+    };
+
+    // fn (<identifier>, <identifier>, ...) <block-statement>
+    // fn (<identifier>) <block-statement>
+    // fn () <block-statement>
+    parseFunctionLiteral = (): FunctionLiteral => {
+        this.expectPeek(TokenKind.LPAREN);
+
+        const parameters = this.parseFunctionParameters();
+
+        this.expectPeek(TokenKind.LBRACE);
+
+        const body = this.parseBlockStatement();
+
+        return new FunctionLiteral(parameters, body);
+    };
+
+    parseFunctionParameters = (): Identifier[] => {
+        if (this.peekTokenIs(TokenKind.RPAREN)) {
+            this.nextToken();
+            return [];
+        }
+        this.expectPeek(TokenKind.IDENT);
+
+        const parameters = [this.parseIdentifier()];
+
+        while (this.peekTokenIs(TokenKind.COMMA)) {
+            this.nextToken();
+            this.expectPeek(TokenKind.IDENT);
+            parameters.push(this.parseIdentifier());
+        }
+
+        this.expectPeek(TokenKind.RPAREN);
+
+        return parameters;
     };
 }

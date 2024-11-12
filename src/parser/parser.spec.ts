@@ -3,7 +3,9 @@ import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
 import {
     ExpressionStatement,
+    FunctionLiteral,
     IfExpression,
+    InfixExpression,
     LetStatement,
     PrefixExpression,
     ReturnStatement,
@@ -248,4 +250,47 @@ it("parses if expressions with alternative", () => {
     assert.equal(expression.alternative!.statements.length, 1);
     assertNodeType(expression.alternative!.statements[0], ExpressionStatement);
     assertLiteral(expression.alternative!.statements[0].expression, "y");
+});
+
+it("parses function literals", () => {
+    const input = `fn(x, y) { x + y; }`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assertNodeType(program.statements[0], ExpressionStatement);
+    const { expression } = program.statements[0];
+
+    assertNodeType(expression, FunctionLiteral);
+    assertLiteral(expression.parameters[0], "x");
+    assertLiteral(expression.parameters[1], "y");
+
+    assertNodeType(expression.body.statements[0], ExpressionStatement);
+    const { expression: innerExpression } = expression.body.statements[0];
+
+    assertNodeType(innerExpression, InfixExpression);
+    assertInfix(innerExpression, "x", "+", "y");
+});
+
+it("parses function parameters", () => {
+    const inputs = [
+        { input: `fn() {}`, expectedParameters: [] },
+        { input: `fn(x) {}`, expectedParameters: ["x"] },
+        { input: `fn(x, y) {}`, expectedParameters: ["x", "y"] },
+    ];
+
+    for (const { input, expectedParameters } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+
+        assertNodeType(program.statements[0], ExpressionStatement);
+        const { expression } = program.statements[0];
+        assertNodeType(expression, FunctionLiteral);
+        assert.equal(expression.parameters.length, expectedParameters.length);
+
+        expectedParameters.forEach((param, i) => {
+            assertLiteral(expression.parameters[i], param);
+        });
+    }
 });

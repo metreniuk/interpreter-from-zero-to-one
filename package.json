@@ -8,7 +8,8 @@
         "test": "vitest",
         "repl": "tsx src/repl.ts",
         "test-lexer": "vitest ./src/lexer/lexer.spec.ts",
-        "test-parser": "vitest ./src/parser/parser.spec.ts"
+        "test-parser": "vitest ./src/parser/parser.spec.ts",
+        "test-eval": "vitest ./src/evaluator/evaluator.spec.ts"
     },
     "keywords": [],
     "author": "metreniuk@gmail.com",

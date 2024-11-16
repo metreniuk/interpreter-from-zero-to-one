@@ -141,12 +141,15 @@ export class Parser {
         this.expectPeek(TokenKind.IDENT);
         const identifier = this.parseIdentifier();
         this.expectPeek(TokenKind.ASSIGN);
+        this.nextToken();
 
-        // TODO: parse expression
-        while (!this.currTokenIs(TokenKind.SEMICOLON)) {
+        const value = this.parseExpression(Precedence.LOWEST);
+
+        if (this.peekTokenIs(TokenKind.SEMICOLON)) {
             this.nextToken();
         }
-        return new LetStatement(identifier, undefined!);
+
+        return new LetStatement(identifier, value);
     }
 
     parseIdentifier = (): Identifier => {
@@ -157,12 +160,13 @@ export class Parser {
     parseReturnStatement(): ReturnStatement {
         this.expectToken(TokenKind.RETURN);
 
-        // TODO: parse expression
-        while (!this.currTokenIs(TokenKind.SEMICOLON)) {
+        const returnValue = this.parseExpression(Precedence.LOWEST);
+
+        if (this.peekTokenIs(TokenKind.SEMICOLON)) {
             this.nextToken();
         }
 
-        return new ReturnStatement(undefined!);
+        return new ReturnStatement(returnValue);
     }
 
     parseExpressionStatement(): ExpressionStatement {

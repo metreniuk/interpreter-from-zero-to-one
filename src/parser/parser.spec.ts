@@ -14,43 +14,40 @@ import {
 import { assertInfix, assertLiteral, assertNodeType } from "../ast/utils";
 
 it("parses let statements", () => {
-    const input = `
-        let x = 5;
-        let y = 10;
-        let foobar = 838383;
-   `;
-    const lexer = new Lexer(input);
-    const parser = new Parser(lexer);
-    const program = parser.parseProgram();
+    const inputs = [
+        { input: `let x = 5;`, name: "x", value: 5 },
+        { input: `let y = true;`, name: "y", value: true },
+        { input: `let foobar = x;`, name: "foobar", value: "x" },
+    ];
 
-    assert.equal(program.statements.length, 3);
+    for (let { name, value, input } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
 
-    const expectedNames = ["x", "y", "foobar"];
-
-    for (let i in program.statements) {
-        const statement = program.statements[i];
-        const name = expectedNames[i];
+        const statement = program.statements[0];
 
         assertNodeType(statement, LetStatement);
         assert.equal(statement.name.value, name);
+        assertLiteral(statement.value, value);
     }
 });
 
 it("parses return statements", () => {
-    const input = `
-        return 5;
-        return 10;
-        return 993322;
-   `;
-    const lexer = new Lexer(input);
-    const parser = new Parser(lexer);
-    const program = parser.parseProgram();
+    const inputs = [
+        { input: `return 5;`, value: 5 },
+        { input: `return true;`, value: true },
+        { input: `return x;`, value: "x" },
+    ];
 
-    assert.equal(program.statements.length, 3);
+    for (let { input, value } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
 
-    for (let i in program.statements) {
-        const statement = program.statements[i];
+        const statement = program.statements[0];
         assertNodeType(statement, ReturnStatement);
+        assertLiteral(statement.returnValue, value);
     }
 });
 

@@ -8,7 +8,15 @@ import {
     Program,
     Statement,
 } from "../ast/ast";
-import { assertValueType, FALSE, Integer, NULL, TRUE, Value } from "./value";
+import {
+    assertValueType,
+    Bool,
+    FALSE,
+    Integer,
+    NULL,
+    TRUE,
+    Value,
+} from "./value";
 
 export function evaluate(node: Node): Value {
     if (node instanceof Program) {
@@ -77,6 +85,9 @@ function evaluateInfixExpression(
     if (left instanceof Integer && right instanceof Integer) {
         return evaluateIntegerInfixExpression(operator, left, right);
     }
+    if (left instanceof Bool && right instanceof Bool) {
+        return evaluateBoolInfixExpression(operator, left, right);
+    }
 
     throw new Error(
         `Infix operator type mismatch\n left: ${left.inspect()}\n right: ${right.inspect()}`
@@ -113,6 +124,26 @@ function evaluateIntegerInfixExpression(
         return boolToValue(left.value != right.value);
     }
     throw new Error(`Unknown Integer infix operator ${operator}`);
+}
+
+function evaluateBoolInfixExpression(
+    operator: string,
+    left: Bool,
+    right: Bool
+): Value {
+    if (operator === "<") {
+        return boolToValue(left.value < right.value);
+    }
+    if (operator === ">") {
+        return boolToValue(left.value > right.value);
+    }
+    if (operator === "==") {
+        return boolToValue(left.value == right.value);
+    }
+    if (operator === "!=") {
+        return boolToValue(left.value != right.value);
+    }
+    throw new Error(`Unknown Boolean infix operator ${operator}`);
 }
 
 function boolToValue(value: boolean) {

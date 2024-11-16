@@ -152,6 +152,28 @@ it("evaluates let statements", () => {
     }
 });
 
+it("evaluates function application", () => {
+    const inputs = [
+        { input: "let identity = fn(x) { x; }; identity(5);", expected: 5 },
+        {
+            input: "let identity = fn(x) { return x; }; identity(5);",
+            expected: 5,
+        },
+        { input: "let double = fn(x) { x * 2; }; double(5);", expected: 10 },
+        { input: "let add = fn(x, y) { x + y; }; add(5, 5);", expected: 10 },
+        {
+            input: "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));",
+            expected: 20,
+        },
+        { input: "fn(x) { x; }(5)", expected: 5 },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
 function assertValue(value: Value, expectedValue: boolean | number | null) {
     const expectedType = typeof expectedValue;
     if (expectedType === "boolean") {

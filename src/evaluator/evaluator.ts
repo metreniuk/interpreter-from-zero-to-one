@@ -1,7 +1,9 @@
 import {
     BlockStatement,
     BooleanLiteral,
+    CallExpression,
     ExpressionStatement,
+    FunctionLiteral,
     Identifier,
     IfExpression,
     InfixExpression,
@@ -18,6 +20,7 @@ import {
     Bool,
     Environment,
     FALSE,
+    FunctionValue,
     Integer,
     NULL,
     ReturnValue,
@@ -68,6 +71,14 @@ export function evaluate(node: Node, env: Environment): Value {
             return value;
         }
         throw new Error(`Used an undeclared value "${node.value}"`);
+    }
+    if (node instanceof FunctionLiteral) {
+        return new FunctionValue(node.parameters, node.body, env);
+    }
+    if (node instanceof CallExpression) {
+        const callee = evaluate(node.callee, env);
+        const args = node.args.map((arg) => evaluate(arg, env));
+        return applyFunction(callee, args);
     }
     throw new Error(`Unknown node "${node.kind}<${node.display()}>"`);
 }
@@ -194,6 +205,17 @@ function evaluateIfExpression(node: IfExpression, env: Environment): Value {
         return evaluate(node.alternative, env);
     }
     return NULL;
+}
+
+function applyFunction(callee: Value, args: Value[]): Value {
+    assertValueType(callee, FunctionValue);
+    const env = callee.env;
+
+    callee.parameters.forEach((param, i) => {
+        env.setIdentifier(param.value, args[i]);
+    });
+
+    return evaluate(callee.body, callee.env);
 }
 
 function isTruthy(value: Value): boolean {

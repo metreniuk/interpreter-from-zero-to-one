@@ -1,4 +1,11 @@
-export type ValueType = "INTEGER" | "BOOLEAN" | "NULL" | "RETURN_VALUE";
+import { BlockStatement, Identifier } from "../ast/ast";
+
+export type ValueType =
+    | "INTEGER"
+    | "BOOLEAN"
+    | "NULL"
+    | "RETURN_VALUE"
+    | "FUNCTION";
 
 export interface Value {
     type: ValueType;
@@ -51,6 +58,29 @@ export class ReturnValue implements Value {
 
     inspect() {
         return `RETURN_VALUE<${this.innerValue.inspect()}>`;
+    }
+}
+
+export class FunctionValue implements Value {
+    type = "FUNCTION" as const;
+
+    parameters: Identifier[];
+    body: BlockStatement;
+    env: Environment;
+
+    constructor(
+        parameters: Identifier[],
+        body: BlockStatement,
+        env: Environment
+    ) {
+        this.parameters = parameters;
+        this.body = body;
+        this.env = env;
+    }
+    inspect() {
+        return `fn (${this.parameters
+            .map((x) => x.display())
+            .join(", ")}) ${this.body.display()}`;
     }
 }
 

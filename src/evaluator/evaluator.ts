@@ -24,7 +24,7 @@ import {
 
 export function evaluate(node: Node): Value {
     if (node instanceof Program) {
-        return evaluateStatements(node.statements);
+        return evaluateProgram(node.statements);
     }
     if (node instanceof ExpressionStatement) {
         return evaluate(node.expression);
@@ -57,12 +57,20 @@ export function evaluate(node: Node): Value {
     throw new Error(`Unknown node "${node.kind}<${node.display()}>"`);
 }
 
+function evaluateProgram(statements: Statement[]): Value {
+    const result = evaluateStatements(statements);
+    if (result instanceof ReturnValue) {
+        return result.innerValue;
+    }
+    return result;
+}
+
 function evaluateStatements(statements: Statement[]): Value {
     let result: Value | undefined;
     for (const statement of statements) {
         result = evaluate(statement);
         if (result instanceof ReturnValue) {
-            return result.innerValue;
+            return result;
         }
     }
 

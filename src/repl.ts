@@ -1,5 +1,6 @@
 import { createInterface } from "node:readline";
 import { Lexer, Token, TokenKind } from "./lexer/lexer";
+import { Parser } from "./parser/parser";
 
 // Create an interface for reading lines from stdin
 const rl = createInterface({
@@ -17,9 +18,13 @@ rl.on("line", (input: string) => {
         rl.close();
     }
     const lexer = new Lexer(input);
-    let token: Token;
-    while ((token = lexer.nextToken()).kind !== TokenKind.EOF) {
-        console.log(token);
+    const parser = new Parser(lexer);
+
+    try {
+        const program = parser.parseProgram();
+        console.log(program.display());
+    } catch (err: any) {
+        console.log(err);
     }
 
     // Display the prompt again after handling input

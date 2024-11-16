@@ -28,6 +28,21 @@ it("evaluates booleans", () => {
     }
 });
 
+it("evaluates logical negation", () => {
+    const inputs = [
+        { input: "!true", expected: false },
+        { input: "!false", expected: true },
+        { input: "!5", expected: false },
+        { input: "!!true", expected: true },
+        { input: "!!false", expected: false },
+        { input: "!!5", expected: true },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
 function assertValue(value: Value, expectedValue: boolean | number) {
     const expectedType = typeof expectedValue;
     if (expectedType === "boolean") {

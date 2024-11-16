@@ -1,6 +1,7 @@
 import {
     BooleanLiteral,
     ExpressionStatement,
+    InfixExpression,
     IntegerLiteral,
     Node,
     PrefixExpression,
@@ -17,7 +18,7 @@ export function evaluate(node: Node): Value {
         return evaluate(node.expression);
     }
     if (node instanceof IntegerLiteral) {
-        return new Integer(node.value);
+        return numberToValue(node.value);
     }
     if (node instanceof BooleanLiteral) {
         return boolToValue(node.value);
@@ -25,6 +26,11 @@ export function evaluate(node: Node): Value {
     if (node instanceof PrefixExpression) {
         const right = evaluate(node.right);
         return evaluatePrefixExpression(node.operator, right);
+    }
+    if (node instanceof InfixExpression) {
+        const left = evaluate(node.left);
+        const right = evaluate(node.right);
+        return evaluateInfixExpression(node.operator, left, right);
     }
     throw new Error(`Unknown node "${node.kind}<${node.display()}>"`);
 }
@@ -60,9 +66,59 @@ function evaluateNotExpression(value: Value): Value {
 
 function evaluateMinusExpression(value: Value): Value {
     assertValueType(value, Integer);
-    return new Integer(-value.value);
+    return numberToValue(-value.value);
+}
+
+function evaluateInfixExpression(
+    operator: string,
+    left: Value,
+    right: Value
+): Value {
+    if (left instanceof Integer && right instanceof Integer) {
+        return evaluateIntegerInfixExpression(operator, left, right);
+    }
+
+    throw new Error(
+        `Infix operator type mismatch\n left: ${left.inspect()}\n right: ${right.inspect()}`
+    );
+}
+
+function evaluateIntegerInfixExpression(
+    operator: string,
+    left: Integer,
+    right: Integer
+): Value {
+    if (operator === "+") {
+        return numberToValue(left.value + right.value);
+    }
+    if (operator === "-") {
+        return numberToValue(left.value - right.value);
+    }
+    if (operator === "*") {
+        return numberToValue(left.value * right.value);
+    }
+    if (operator === "/") {
+        return numberToValue(left.value / right.value);
+    }
+    if (operator === "<") {
+        return boolToValue(left.value < right.value);
+    }
+    if (operator === ">") {
+        return boolToValue(left.value > right.value);
+    }
+    if (operator === "==") {
+        return boolToValue(left.value == right.value);
+    }
+    if (operator === "!=") {
+        return boolToValue(left.value != right.value);
+    }
+    throw new Error(`Unknown Integer infix operator ${operator}`);
 }
 
 function boolToValue(value: boolean) {
     return value ? TRUE : FALSE;
+}
+
+function numberToValue(value: number) {
+    return new Integer(value);
 }

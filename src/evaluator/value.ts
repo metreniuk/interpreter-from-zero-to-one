@@ -53,3 +53,7 @@ export function assertValueType<T extends Value>(
         );
     }
 }
+
+export const TRUE = new Bool(true);
+export const FALSE = new Bool(false);
+export const NULL = new Null();

@@ -1,11 +1,12 @@
 import {
+    BooleanLiteral,
     ExpressionStatement,
     IntegerLiteral,
     Node,
     Program,
     Statement,
 } from "../ast/ast";
-import { Integer, Value } from "./value";
+import { FALSE, Integer, TRUE, Value } from "./value";
 
 export function evaluate(node: Node): Value {
     if (node instanceof Program) {
@@ -17,6 +18,10 @@ export function evaluate(node: Node): Value {
     if (node instanceof IntegerLiteral) {
         return new Integer(node.value);
     }
+    if (node instanceof BooleanLiteral) {
+        return boolToValue(node.value);
+    }
+
     throw new Error(`Unknown node "${node.kind}<${node.display()}>"`);
 }
 
@@ -26,4 +31,8 @@ function evaluateStatements(statements: Statement[]): Value {
         result = evaluate(statement);
     }
     return result!;
+}
+
+function boolToValue(value: boolean) {
+    return value ? TRUE : FALSE;
 }

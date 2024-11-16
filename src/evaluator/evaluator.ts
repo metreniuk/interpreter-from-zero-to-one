@@ -8,6 +8,7 @@ import {
     Node,
     PrefixExpression,
     Program,
+    ReturnStatement,
     Statement,
 } from "../ast/ast";
 import {
@@ -16,6 +17,7 @@ import {
     FALSE,
     Integer,
     NULL,
+    ReturnValue,
     TRUE,
     Value,
 } from "./value";
@@ -48,6 +50,10 @@ export function evaluate(node: Node): Value {
     if (node instanceof BlockStatement) {
         return evaluateStatements(node.statements);
     }
+    if (node instanceof ReturnStatement) {
+        const innerValue = evaluate(node.returnValue);
+        return new ReturnValue(innerValue);
+    }
     throw new Error(`Unknown node "${node.kind}<${node.display()}>"`);
 }
 
@@ -55,7 +61,11 @@ function evaluateStatements(statements: Statement[]): Value {
     let result: Value | undefined;
     for (const statement of statements) {
         result = evaluate(statement);
+        if (result instanceof ReturnValue) {
+            return result.innerValue;
+        }
     }
+
     return result!;
 }
 

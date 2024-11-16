@@ -109,6 +109,19 @@ it("evaluates if expressions", () => {
     }
 });
 
+it("evaluates return statements", () => {
+    const inputs = [
+        { input: "return 10;", expected: 10 },
+        { input: "return 10; 9;", expected: 10 },
+        { input: "return 2 * 5; 9;", expected: 10 },
+        { input: "9; return 2 * 5; 9;", expected: 10 },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
 function assertValue(value: Value, expectedValue: boolean | number | null) {
     const expectedType = typeof expectedValue;
     if (expectedType === "boolean") {

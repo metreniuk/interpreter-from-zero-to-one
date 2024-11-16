@@ -1,4 +1,4 @@
-export type ValueType = "INTEGER" | "BOOLEAN" | "NULL";
+export type ValueType = "INTEGER" | "BOOLEAN" | "NULL" | "RETURN_VALUE";
 
 export interface Value {
     type: ValueType;
@@ -38,6 +38,19 @@ export class Null implements Value {
     constructor() {}
     inspect() {
         return `NULL`;
+    }
+}
+
+export class ReturnValue implements Value {
+    type = "RETURN_VALUE" as const;
+    innerValue: Value;
+
+    constructor(innerValue: Value) {
+        this.innerValue = innerValue;
+    }
+
+    inspect() {
+        return `RETURN_VALUE<${this.innerValue.inspect()}>`;
     }
 }
 

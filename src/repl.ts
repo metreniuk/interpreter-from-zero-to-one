@@ -2,6 +2,7 @@ import { createInterface } from "node:readline";
 import { Lexer } from "./lexer/lexer";
 import { Parser } from "./parser/parser";
 import { evaluate } from "./evaluator/evaluator";
+import { Environment } from "./evaluator/value";
 
 // Create an interface for reading lines from stdin
 const rl = createInterface({
@@ -23,7 +24,8 @@ rl.on("line", (input: string) => {
 
     try {
         const program = parser.parseProgram();
-        const value = evaluate(program);
+        const env = new Environment();
+        const value = evaluate(program, env);
         console.log(value.inspect());
     } catch (err: any) {
         console.log(err);

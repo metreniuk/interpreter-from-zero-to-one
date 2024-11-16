@@ -2,9 +2,11 @@ import {
     BlockStatement,
     BooleanLiteral,
     ExpressionStatement,
+    Identifier,
     IfExpression,
     InfixExpression,
     IntegerLiteral,
+    LetStatement,
     Node,
     PrefixExpression,
     Program,
@@ -14,6 +16,7 @@ import {
 import {
     assertValueType,
     Bool,
+    Environment,
     FALSE,
     Integer,
     NULL,
@@ -22,12 +25,12 @@ import {
     Value,
 } from "./value";
 
-export function evaluate(node: Node): Value {
+export function evaluate(node: Node, env: Environment): Value {
     if (node instanceof Program) {
-        return evaluateProgram(node.statements);
+        return evaluateProgram(node.statements, env);
     }
     if (node instanceof ExpressionStatement) {
-        return evaluate(node.expression);
+        return evaluate(node.expression, env);
     }
     if (node instanceof IntegerLiteral) {
         return numberToValue(node.value);
@@ -36,39 +39,51 @@ export function evaluate(node: Node): Value {
         return boolToValue(node.value);
     }
     if (node instanceof PrefixExpression) {
-        const right = evaluate(node.right);
+        const right = evaluate(node.right, env);
         return evaluatePrefixExpression(node.operator, right);
     }
     if (node instanceof InfixExpression) {
-        const left = evaluate(node.left);
-        const right = evaluate(node.right);
+        const left = evaluate(node.left, env);
+        const right = evaluate(node.right, env);
         return evaluateInfixExpression(node.operator, left, right);
     }
     if (node instanceof IfExpression) {
-        return evaluateIfExpression(node);
+        return evaluateIfExpression(node, env);
     }
     if (node instanceof BlockStatement) {
-        return evaluateStatements(node.statements);
+        return evaluateStatements(node.statements, env);
     }
     if (node instanceof ReturnStatement) {
-        const innerValue = evaluate(node.returnValue);
+        const innerValue = evaluate(node.returnValue, env);
         return new ReturnValue(innerValue);
+    }
+    if (node instanceof LetStatement) {
+        const value = evaluate(node.value, env);
+        env.setIdentifier(node.name.value, value);
+        return NULL;
+    }
+    if (node instanceof Identifier) {
+        const value = env.getIdentifier(node.value);
+        if (value) {
+            return value;
+        }
+        throw new Error(`Used an undeclared value "${node.value}"`);
     }
     throw new Error(`Unknown node "${node.kind}<${node.display()}>"`);
 }
 
-function evaluateProgram(statements: Statement[]): Value {
-    const result = evaluateStatements(statements);
+function evaluateProgram(statements: Statement[], env: Environment): Value {
+    const result = evaluateStatements(statements, env);
     if (result instanceof ReturnValue) {
         return result.innerValue;
     }
     return result;
 }
 
-function evaluateStatements(statements: Statement[]): Value {
+function evaluateStatements(statements: Statement[], env: Environment): Value {
     let result: Value | undefined;
     for (const statement of statements) {
-        result = evaluate(statement);
+        result = evaluate(statement, env);
         if (result instanceof ReturnValue) {
             return result;
         }
@@ -172,11 +187,11 @@ function evaluateBoolInfixExpression(
     throw new Error(`Unknown Boolean infix operator ${operator}`);
 }
 
-function evaluateIfExpression(node: IfExpression): Value {
-    if (isTruthy(evaluate(node.condition))) {
-        return evaluate(node.consequence);
+function evaluateIfExpression(node: IfExpression, env: Environment): Value {
+    if (isTruthy(evaluate(node.condition, env))) {
+        return evaluate(node.consequence, env);
     } else if (node.alternative) {
-        return evaluate(node.alternative);
+        return evaluate(node.alternative, env);
     }
     return NULL;
 }

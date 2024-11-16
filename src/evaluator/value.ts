@@ -67,6 +67,18 @@ export function assertValueType<T extends Value>(
     }
 }
 
+export class Environment {
+    scope: Map<string, Value> = new Map();
+
+    getIdentifier = (name: string) => {
+        return this.scope.get(name);
+    };
+
+    setIdentifier = (name: string, val: Value) => {
+        return this.scope.set(name, val);
+    };
+}
+
 export const TRUE = new Bool(true);
 export const FALSE = new Bool(false);
 export const NULL = new Null();

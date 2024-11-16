@@ -1,5 +1,12 @@
 import { assert, it } from "vitest";
-import { assertValueType, Bool, Integer, Null, Value } from "./value";
+import {
+    assertValueType,
+    Bool,
+    Environment,
+    Integer,
+    Null,
+    Value,
+} from "./value";
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "../parser/parser";
 import { evaluate } from "./evaluator";
@@ -132,6 +139,19 @@ it("evaluates return statements", () => {
     }
 });
 
+it("evaluates let statements", () => {
+    const inputs = [
+        { input: "let a = 5; a;", expected: 5 },
+        { input: "let a = 5 * 5; a;", expected: 25 },
+        { input: "let a = 5; let b = a; b;", expected: 5 },
+        { input: "let a = 5; let b = a; let c = a + b + 5; c;", expected: 15 },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
 function assertValue(value: Value, expectedValue: boolean | number | null) {
     const expectedType = typeof expectedValue;
     if (expectedType === "boolean") {
@@ -154,5 +174,6 @@ export function evaluateProgram(input: string): Value {
     const lexer = new Lexer(input);
     const parser = new Parser(lexer);
     const program = parser.parseProgram();
-    return evaluate(program);
+    const env = new Environment();
+    return evaluate(program, env);
 }

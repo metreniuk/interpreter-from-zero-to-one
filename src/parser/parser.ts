@@ -2,6 +2,7 @@ import { Lexer, Token, TokenKind } from "../lexer/lexer";
 import {
     BlockStatement,
     BooleanLiteral,
+    CallExpression,
     Expression,
     ExpressionStatement,
     FunctionLiteral,
@@ -37,6 +38,7 @@ const precedences = new Map<TokenKind, Precedence>([
     [TokenKind.MINUS, Precedence.SUM],
     [TokenKind.SLASH, Precedence.PRODUCT],
     [TokenKind.ASTERISK, Precedence.PRODUCT],
+    [TokenKind.LPAREN, Precedence.CALL],
 ]);
 
 export class Parser {
@@ -69,6 +71,7 @@ export class Parser {
         this.infixParseFns.set(TokenKind.GT, this.parseInfixExpression);
         this.infixParseFns.set(TokenKind.EQ, this.parseInfixExpression);
         this.infixParseFns.set(TokenKind.NOT_EQ, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.LPAREN, this.parseCallExpression);
     }
 
     nextToken() {
@@ -313,5 +316,26 @@ export class Parser {
         this.expectPeek(TokenKind.RPAREN);
 
         return parameters;
+    };
+
+    parseCallExpression = (callee: Expression): CallExpression => {
+        const args = this.parseCallArguments();
+        return new CallExpression(callee, args);
+    };
+
+    parseCallArguments = (): Expression[] => {
+        if (this.peekTokenIs(TokenKind.RPAREN)) {
+            this.nextToken();
+            return [];
+        }
+        this.nextToken();
+        const args = [this.parseExpression(Precedence.LOWEST)];
+        while (this.peekTokenIs(TokenKind.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+            args.push(this.parseExpression(Precedence.LOWEST));
+        }
+        this.expectPeek(TokenKind.RPAREN);
+        return args;
     };
 }

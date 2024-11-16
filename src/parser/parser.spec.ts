@@ -2,6 +2,7 @@ import { assert, it } from "vitest";
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
 import {
+    CallExpression,
     ExpressionStatement,
     FunctionLiteral,
     IfExpression,
@@ -197,6 +198,18 @@ it("parses expressions with precedence", () => {
             input: "!(true == true)",
             expected: "(!(true == true))",
         },
+        {
+            input: "a + add(b * c) + d",
+            expected: "((a + add((b * c))) + d)",
+        },
+        {
+            input: "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            expected: "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        },
+        {
+            input: "add(a + b + c * d / f + g)",
+            expected: "add((((a + b) + ((c * d) / f)) + g))",
+        },
     ];
 
     for (const { input, expected } of inputs) {
@@ -293,4 +306,20 @@ it("parses function parameters", () => {
             assertLiteral(expression.parameters[i], param);
         });
     }
+});
+
+it("parses call expressions", () => {
+    const input = `add(1, 2 + 3, 4 * 5);`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assertNodeType(program.statements[0], ExpressionStatement);
+    const { expression } = program.statements[0];
+    assertNodeType(expression, CallExpression);
+
+    assertLiteral(expression.callee, "add");
+    assertLiteral(expression.args[0], 1);
+    assertInfix(expression.args[1], 2, "+", 3);
+    assertInfix(expression.args[2], 4, "*", 5);
 });

@@ -18,7 +18,8 @@ export interface Expression extends Node {
         | "PrefixExpression"
         | "InfixExpression"
         | "IfExpression"
-        | "FunctionLiteral";
+        | "FunctionLiteral"
+        | "CallExpression";
 }
 
 export class Program implements Node {
@@ -219,5 +220,26 @@ export class FunctionLiteral implements Expression {
         return `fn (${this.parameters
             .map((x) => x.display())
             .join(", ")}) ${this.body.display()}`;
+    }
+}
+
+export class CallExpression implements Expression {
+    kind = "CallExpression" as const;
+
+    callee: Expression;
+    args: Expression[];
+
+    constructor(
+        callee: Expression, // Identifier or FunctionLiteral
+        args: Expression[]
+    ) {
+        this.callee = callee;
+        this.args = args;
+    }
+
+    display(): string {
+        return `${this.callee.display()}(${this.args
+            .map((x) => x.display())
+            .join(", ")})`;
     }
 }

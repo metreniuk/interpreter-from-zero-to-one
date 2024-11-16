@@ -7,7 +7,7 @@ import {
     Program,
     Statement,
 } from "../ast/ast";
-import { FALSE, Integer, NULL, TRUE, Value } from "./value";
+import { assertValueType, FALSE, Integer, NULL, TRUE, Value } from "./value";
 
 export function evaluate(node: Node): Value {
     if (node instanceof Program) {
@@ -41,6 +41,9 @@ function evaluatePrefixExpression(operator: string, right: Value): Value {
     if (operator === "!") {
         return evaluateNotExpression(right);
     }
+    if (operator === "-") {
+        return evaluateMinusExpression(right);
+    }
     throw new Error(`Unknown prefix operator "${operator}"`);
 }
 
@@ -53,6 +56,11 @@ function evaluateNotExpression(value: Value): Value {
         return TRUE;
     }
     return FALSE;
+}
+
+function evaluateMinusExpression(value: Value): Value {
+    assertValueType(value, Integer);
+    return new Integer(-value.value);
 }
 
 function boolToValue(value: boolean) {

@@ -1,4 +1,5 @@
 export interface Node {
+    kind: Statement["kind"] | Expression["kind"] | "Program";
     display(): string;
 }
 
@@ -23,6 +24,8 @@ export interface Expression extends Node {
 }
 
 export class Program implements Node {
+    kind = "Program" as const;
+
     statements: Statement[];
 
     constructor(statements: Statement[]) {

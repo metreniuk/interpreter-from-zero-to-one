@@ -1,6 +1,8 @@
 import {
+    BlockStatement,
     BooleanLiteral,
     ExpressionStatement,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     Node,
@@ -39,6 +41,12 @@ export function evaluate(node: Node): Value {
         const left = evaluate(node.left);
         const right = evaluate(node.right);
         return evaluateInfixExpression(node.operator, left, right);
+    }
+    if (node instanceof IfExpression) {
+        return evaluateIfExpression(node);
+    }
+    if (node instanceof BlockStatement) {
+        return evaluateStatements(node.statements);
     }
     throw new Error(`Unknown node "${node.kind}<${node.display()}>"`);
 }
@@ -144,6 +152,20 @@ function evaluateBoolInfixExpression(
         return boolToValue(left.value != right.value);
     }
     throw new Error(`Unknown Boolean infix operator ${operator}`);
+}
+
+function evaluateIfExpression(node: IfExpression): Value {
+    if (isTruthy(evaluate(node.condition))) {
+        return evaluate(node.consequence);
+    } else if (node.alternative) {
+        return evaluate(node.alternative);
+    }
+    return NULL;
+}
+
+function isTruthy(value: Value): boolean {
+    const isFalsy = value === FALSE || value === NULL;
+    return !isFalsy;
 }
 
 function boolToValue(value: boolean) {

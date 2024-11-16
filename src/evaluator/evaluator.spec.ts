@@ -1,5 +1,5 @@
 import { assert, it } from "vitest";
-import { assertValueType, Bool, Integer, Value } from "./value";
+import { assertValueType, Bool, Integer, Null, Value } from "./value";
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "../parser/parser";
 import { evaluate } from "./evaluator";
@@ -93,7 +93,23 @@ it("evaluates boolean expressions", () => {
     }
 });
 
-function assertValue(value: Value, expectedValue: boolean | number) {
+it("evaluates if expressions", () => {
+    const inputs = [
+        { input: "if (true) { 10 }", expected: 10 },
+        { input: "if (false) { 10 }", expected: null },
+        { input: "if (1) { 10 }", expected: 10 },
+        { input: "if (1 < 2) { 10 }", expected: 10 },
+        { input: "if (1 > 2) { 10 }", expected: null },
+        { input: "if (1 > 2) { 10 } else { 20 }", expected: 20 },
+        { input: "if (1 < 2) { 10 } else { 20 }", expected: 10 },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
+function assertValue(value: Value, expectedValue: boolean | number | null) {
     const expectedType = typeof expectedValue;
     if (expectedType === "boolean") {
         assertValueType(value, Bool);
@@ -101,6 +117,13 @@ function assertValue(value: Value, expectedValue: boolean | number) {
     } else if (expectedType === "number") {
         assertValueType(value, Integer);
         assert.equal(value.value, expectedValue);
+    } else if (expectedValue === null) {
+        assertValueType(value, Null);
+        assert.equal(value.value, expectedValue);
+    } else {
+        throw new Error(
+            `Unknown value type "${expectedType}" of expected value "${expectedValue}"`
+        );
     }
 }
 

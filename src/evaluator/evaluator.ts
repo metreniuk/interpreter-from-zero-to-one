@@ -215,7 +215,12 @@ function applyFunction(callee: Value, args: Value[]): Value {
         env.setIdentifier(param.value, args[i]);
     });
 
-    return evaluate(callee.body, env);
+    const result = evaluate(callee.body, env);
+
+    if (result instanceof ReturnValue) {
+        return result.innerValue;
+    }
+    return result;
 }
 
 function isTruthy(value: Value): boolean {

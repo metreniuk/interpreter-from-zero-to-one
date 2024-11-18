@@ -178,6 +178,27 @@ it("evaluates function application", () => {
             `,
             expected: 5,
         },
+        {
+            input: `
+            let fa = fn(x, y) {
+                return x + y;
+            };
+            let fb = fn(x, y) {
+                let z = fa(x, y);
+                return z + x;
+            };
+            fb(1, 2)`,
+            expected: 4,
+        },
+        {
+            input: `
+            let newAdder = fn(x) {
+                fn(y) { x + y };
+            };
+            let addTwo = newAdder(2);
+            addTwo(2);`,
+            expected: 4,
+        },
     ];
 
     for (const { input, expected } of inputs) {

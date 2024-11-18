@@ -209,13 +209,13 @@ function evaluateIfExpression(node: IfExpression, env: Environment): Value {
 
 function applyFunction(callee: Value, args: Value[]): Value {
     assertValueType(callee, FunctionValue);
-    const env = callee.env;
+    const env = Environment.withParent(callee.env);
 
     callee.parameters.forEach((param, i) => {
         env.setIdentifier(param.value, args[i]);
     });
 
-    return evaluate(callee.body, callee.env);
+    return evaluate(callee.body, env);
 }
 
 function isTruthy(value: Value): boolean {

@@ -99,9 +99,20 @@ export function assertValueType<T extends Value>(
 
 export class Environment {
     scope: Map<string, Value> = new Map();
+    parentEnv: Environment | undefined;
 
-    getIdentifier = (name: string) => {
-        return this.scope.get(name);
+    static withParent(parentEnv: Environment) {
+        const env = new Environment();
+        env.parentEnv = parentEnv;
+        return env;
+    }
+
+    getIdentifier = (name: string): Value | undefined => {
+        const value = this.scope.get(name);
+        if (!value && this.parentEnv) {
+            return this.parentEnv.getIdentifier(name);
+        }
+        return value;
     };
 
     setIdentifier = (name: string, val: Value) => {

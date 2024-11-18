@@ -166,6 +166,18 @@ it("evaluates function application", () => {
             expected: 20,
         },
         { input: "fn(x) { x; }(5)", expected: 5 },
+        {
+            input: `
+            let x = 5;
+            let f = fn() {
+                let x = 3;
+                return x; 
+            };
+            let y = f();
+            x
+            `,
+            expected: 5,
+        },
     ];
 
     for (const { input, expected } of inputs) {

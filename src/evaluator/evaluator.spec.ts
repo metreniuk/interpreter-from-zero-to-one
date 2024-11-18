@@ -207,6 +207,38 @@ it("evaluates function application", () => {
     }
 });
 
+it("fibonacci", () => {
+    const input = `
+        let fibonacci = fn(x) {
+            if (x < 2) {
+                return x;
+            }
+            return fibonacci(x - 1) + fibonacci(x - 2);
+        };
+        fibonacci(10)
+    `;
+
+    const value = evaluateProgram(input);
+
+    assertValue(value, 55);
+});
+
+it("factorial", () => {
+    const input = `
+        let factorial = fn(x) {
+            if (x < 2) {
+                return 1;
+            }
+            return x * factorial(x - 1);
+        };
+        factorial(10)
+    `;
+
+    const value = evaluateProgram(input);
+
+    assertValue(value, 3628800);
+});
+
 function assertValue(value: Value, expectedValue: boolean | number | null) {
     const expectedType = typeof expectedValue;
     if (expectedType === "boolean") {

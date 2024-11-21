@@ -694,6 +694,8 @@ rl.on("line", (input: string) => {
 
 ## Parsing
 
+https://www.tldraw.com/ro/38a7SSvjj2jarYqWr1UUW?d=v-6150.7313.11535.7799.page
+
 1. Create an `ast` module (`src/ast/ast.ts`)
 2. Declare `Node`, `Expression`, and `Statement`. Declare `Program` class that implements `Node`.
 
@@ -808,7 +810,7 @@ export class Parser {
 }
 ```
 
-6. Add a test for parsing "let" statements and add a script to run the parser tests and
+6. Add a test for parsing "let" statements and add a script to run the parser tests.
 
 ```ts
 // src/parser/parser.spec.ts
@@ -855,7 +857,7 @@ it("parses let statements", () => {
 }
 ```
 
-7.  Let's start parsing the "let" statements. We will start with declaring some helper methods that will be using a lot.
+7.  Let's start parsing the "let" statements. We will start with declaring some helper methods which we will be using a lot.
 
 ```ts
 // src/parser/parser.ts
@@ -893,7 +895,7 @@ class Parser {
 }
 ```
 
-Let's start from the entry point `parseProgram` and move step by step towards `parseLetStatement`
+Let's start from the entry point `parseProgram` and move step by step towards `parseLetStatement`.
 
 ```ts
 // src/parser/parser.ts
@@ -913,7 +915,7 @@ class Parser {
 }
 ```
 
-Now add `parseStatement` that decide what kind of statement we need to parse based on the current token.
+Now add `parseStatement` that decides what kind of statement we need to parse based on the current token.
 
 ```ts
 // src/parser/parser.ts
@@ -929,7 +931,7 @@ class Parser {
 }
 ```
 
-A "let" statement has a following schema: `let <identifier> = <expression>;`. We are starting at the `let` token. We will ignore for now the `<expression>` part as it's pretty complex. We will come back later.
+A "let" statement has a following schema: `let <identifier> = <expression>;`. We are starting at the `LET` token. We will ignore for now the `<expression>` part as it's pretty complex. We will come back to it later.
 
 ```ts
 // src/parser/parser.ts
@@ -952,7 +954,7 @@ class Parser {
 }
 ```
 
-Parsing the identifier is pretty straightforward
+Parsing the identifier is pretty straightforward.
 
 ```ts
 // src/parser/parser.ts
@@ -995,9 +997,6 @@ it("parses return statements", () => {
 
 Declare `ReturnStatement` that implements `Statement`. Update `kind` property of `Statement`.
 
-<details>
-<summary>code</summary>
-
 ```ts
 // src/ast/ast.ts
 
@@ -1018,10 +1017,7 @@ export class ReturnStatement implements Statement {
 }
 ```
 
-</details>
-<br>
-
-Add a `parseReturnStatement` method and use it inside `parseStatement`
+Add a `parseReturnStatement` method and use it inside `parseStatement`.
 
 <details>
 <summary>code</summary>
@@ -1098,6 +1094,8 @@ it("parses return statements", () => {
 ```
 
 9.  Let's talk expressions.
+
+https://www.tldraw.com/ro/38a7SSvjj2jarYqWr1UUW?d=v-5258.11811.5580.3773.page
 
 We are implementing what is known a Pratt Parser which is based on recursive descent. The main idea is simple but brilliant: all expressions can be divided into two kinds "prefix" and "infix" expressions. Let's look at some examples:
 
@@ -1241,7 +1239,7 @@ export class Parser {
 
 **Note:** change `parseIdentifier` method to an arrow-function or bind it to maintain `this` context.
 
-10. We can now parse any expression that has only one identifier. Now let's do the same thing for parsing integers. Start with a test.
+10. We can now parse any expression that has only one identifier. Now let's do the same thing for parsing **integers**. Start with a test.
 
 ```ts
 // parser/parser.spec.ts
@@ -1263,7 +1261,7 @@ it("parses integer literal expressions", () => {
 });
 ```
 
-Add `IntegerLiteral` class and use it in tests
+Add `IntegerLiteral` class and use it in tests.
 
 <details>
 <summary>code</summary>
@@ -1320,7 +1318,7 @@ export class Parser {
 </details>
 <br>
 
-11. Let's now parse prefix expressions with operators. As always, a test.
+11. Let's now parse prefix expressions with operators. As always, first add a test.
 
 ```ts
 // parsers/parser.spec.ts
@@ -1419,3 +1417,1954 @@ export function assertIntegerLiteral(
     assert.equal(expression.value, expectedValue);
 }
 ```
+
+13. Time to parse infix expressions: `+`, `-`, `<`, `==`, etc.
+
+Some tests first
+
+```ts
+// parser/parser.spec.ts
+it("parses infix expression", () => {
+    const inputs = [
+        { input: "5 + 5;", leftValue: 5, operator: "+", rightValue: 5 },
+        { input: "5 - 5;", leftValue: 5, operator: "-", rightValue: 5 },
+        { input: "5 * 5;", leftValue: 5, operator: "*", rightValue: 5 },
+        { input: "5 / 5;", leftValue: 5, operator: "/", rightValue: 5 },
+        { input: "5 > 5;", leftValue: 5, operator: ">", rightValue: 5 },
+        { input: "5 < 5;", leftValue: 5, operator: "<", rightValue: 5 },
+        { input: "5 == 5;", leftValue: 5, operator: "==", rightValue: 5 },
+        { input: "5 != 5;", leftValue: 5, operator: "!=", rightValue: 5 },
+    ];
+    for (const { input, operator, leftValue, rightValue } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+
+        assert.equal(program.statements.length, 1);
+        const statement = program.statements[0];
+        assertNodeType(statement, ExpressionStatement);
+
+        assertNodeType(statement.expression, InfixExpression);
+        assert.equal(statement.expression.operator, operator);
+        assertIntegerLiteral(statement.expression.left, leftValue);
+        assertIntegerLiteral(statement.expression.right, rightValue);
+    }
+});
+```
+
+Create the `InfixExpression` class.
+
+<details>
+<summary>code</summary>
+
+```ts
+// ast/ast.ts
+
+export class InfixExpression implements Expression {
+    kind = "InfixExpression" as const;
+
+    operator: string;
+    left: Expression;
+    right: Expression;
+
+    constructor(operator: string, left: Expression, right: Expression) {
+        this.operator = operator;
+        this.left = left;
+        this.right = right;
+    }
+
+    display(): string {
+        return `(${this.left.display()} ${
+            this.operator
+        } ${this.right.display()})`;
+    }
+}
+```
+
+</details>
+<br>
+
+Add `parseInfixExpression` similar to `parsePrefixExpression` and use it inside `parseExpression`. Set-up `parseInfixExpression` for relevant tokens.
+
+```ts
+// parser/parser.ts
+export class Parser {
+    // ...
+    constructor(public lexer: Lexer) {
+        // ...
+        this.prefixParseFns.set(TokenKind.MINUS, this.parsePrefixExpression);
+        // set-up prefix functions
+        this.infixParseFns.set(TokenKind.PLUS, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.MINUS, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.BANG, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.ASTERISK, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.SLASH, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.LT, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.GT, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.EQ, this.parseInfixExpression);
+        this.infixParseFns.set(TokenKind.NOT_EQ, this.parseInfixExpression);
+    }
+    // ...
+    // 1 + 3
+    // 3 != 1
+    parseInfixExpression = (left: Expression): InfixExpression => {
+        const operator = this.currToken.literal;
+        this.nextToken();
+        const right = this.parseExpression();
+        return new InfixExpression(token, operator, left, right);
+    };
+
+    // Note: use peekToken for infix operator lookup
+    parseExpression(): Expression {
+        // ...
+        let leftExpr = prefix();
+        while (!this.peekTokenIs(TokenKind.SEMICOLON)) {
+            const infix = this.infixParseFns.get(this.peekToken.kind);
+            if (!infix) {
+                return leftExpr;
+            }
+            this.nextToken();
+            const rightExpr = infix(leftExpr);
+            leftExpr = rightExpr;
+        }
+        return leftExpr;
+    }
+}
+```
+
+14. We are ready to introduce operation precedence.
+
+```ts
+// parser/parser.spec.ts
+
+it("parses expressions with precedence", () => {
+    const inputs = [
+        { input: "!-a", expected: "(!(-a))" },
+        { input: "a + b / c", expected: "(a + (b / c))" },
+        { input: "a * -b", expected: "(a * (-b))" },
+        { input: "a + b + c", expected: "((a + b) + c)" },
+        { input: "a + b - c", expected: "((a + b) - c)" },
+        { input: "a * b * c", expected: "((a * b) * c)" },
+        { input: "a * b / c", expected: "((a * b) / c)" },
+        {
+            input: "a + b * c + d / e - f",
+            expected: "(((a + (b * c)) + (d / e)) - f)",
+        },
+        { input: "3 + 4; -5 * 5", expected: "(3 + 4)((-5) * 5)" },
+        { input: "5 > 4 == 3 < 4", expected: "((5 > 4) == (3 < 4))" },
+        { input: "5 < 4 != 3 > 4", expected: "((5 < 4) != (3 > 4))" },
+        {
+            input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+        {
+            input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+
+        assert.equal(program.display(), expected);
+    }
+});
+```
+
+Let's declare `Precedence` enum and add some helpers.
+
+```ts
+// parser/parser.ts
+
+enum Precedence {
+    LOWEST = 0,
+    EQUALS = 1,
+    COMPARE = 2,
+    SUM = 3,
+    PRODUCT = 4,
+    PREFIX = 5, // used in parsePrefixExpression in the next step
+}
+const precedences = new Map<TokenKind, Precedence>([
+    [TokenKind.EQ, Precedence.EQUALS],
+    [TokenKind.NOT_EQ, Precedence.EQUALS],
+    [TokenKind.LT, Precedence.COMPARE],
+    [TokenKind.GT, Precedence.COMPARE],
+    [TokenKind.PLUS, Precedence.SUM],
+    [TokenKind.MINUS, Precedence.SUM],
+    [TokenKind.SLASH, Precedence.PRODUCT],
+    [TokenKind.ASTERISK, Precedence.PRODUCT],
+]);
+
+export class Parser {
+    // ...
+
+    currPrecedence(): Precedence {
+        return precedences.get(this.currToken.kind) ?? Precedence.LOWEST;
+    }
+
+    peekPrecedence(): Precedence {
+        return precedences.get(this.peekToken.kind) ?? Precedence.LOWEST;
+    }
+
+    // ...
+}
+```
+
+Account for precedence in expression parsing. 
+
+**Tip:** You can change `parseExpression` method to accept `precedence: Precedence` parameter and TypeScript will show all the places where it needs to be adjusted.
+
+```ts
+// parser/parser.ts
+
+export class Parser {
+    // ...
+
+    parseExpressionStatement(): ExpressionStatement {
+        const expression = this.parseExpression(Precedence.LOWEST);
+        // ...
+    }
+
+    parseExpression(precedence: Precedence): Expression {
+        // ...
+
+        while (
+            !this.peekTokenIs(TokenKind.SEMICOLON) &&
+            precedence < this.peekPrecedence()
+        ) {
+            // ...
+        }
+        // ...
+    }
+
+    // ...
+
+    parsePrefixExpression = (): PrefixExpression => {
+        // ...
+        const right = this.parseExpression(Precedence.PREFIX);
+        // ...
+    };
+
+    parseInfixExpression = (left: Expression): InfixExpression => {
+        const operator = this.currToken.literal;
+        const precedence = this.currPrecedence();
+        // ...
+    };
+}
+```
+
+15. Let's parse boolean literals. Update the existing tests.
+
+```ts
+// parser/parser.ts
+
+it("parses infix expression", () => {
+    const inputs = [
+        // ...
+        {
+            input: "true == true;",
+            leftValue: true,
+            operator: "==",
+            rightValue: true,
+        },
+        {
+            input: "true != false;",
+            leftValue: true,
+            operator: "!=",
+            rightValue: false,
+        },
+        {
+            input: "false == false;",
+            leftValue: false,
+            operator: "==",
+            rightValue: false,
+        },
+    ]
+    // ...
+}
+
+it("parses expressions with precedence", () => {
+    const inputs = [
+        // ...
+        {
+            input: "3 > 5 == false",
+            expected: "((3 > 5) == false)",
+        },
+        {
+            input: "3 < 5 == true",
+            expected: "((3 < 5) == true)",
+        },
+    ];
+    // ...
+}
+
+```
+
+Declare the `BooleanLiteral` class
+
+<details>
+<summary>code</summary>
+
+```ts
+export class BooleanLiteral implements Expression {
+    kind = "BooleanLiteral" as const;
+
+    value: boolean;
+
+    constructor(value: boolean) {
+        this.value = value;
+    }
+
+    display(): string {
+        return `${this.value}`;
+    }
+}
+```
+
+</details>
+<br>
+
+Introduce a new helper `assertLiteral` and replace `assertIntegerLiteral` in all the tests.
+
+```ts
+// ast/utils.ts
+
+export function assertLiteral(
+    expression: Expression,
+    expectedValue: number | string | boolean
+) {
+    const expectedType = typeof expectedValue;
+
+    if (expectedType === "number") {
+        assertNodeType(expression, IntegerLiteral);
+        assert.equal(expression.value, expectedValue);
+    } else if (expectedType === "string") {
+        assertNodeType(expression, Identifier);
+        assert.equal(expression.value, expectedValue);
+    } else if (expectedType === "boolean") {
+        assertNodeType(expression, BooleanLiteral);
+        assert.equal(expression.value, expectedValue);
+    } else {
+        throw new Error(
+            `Unknown literal type "${expectedType}" of expected value "${expectedValue}"`
+        );
+    }
+}
+```
+
+Parse boolean literals. Create a `parseBooleanLiteral` method
+which checks the current token and creates a `BooleanLiteral` instance.
+Set `parseBooleanLiteral` as a prefix function for `TokenKind.TRUE` and `TokenKind.FALSE`.
+
+```ts
+// parser/parser.ts
+
+export class Parser {
+    // ...
+    constructor(public lexer: Lexer) {
+        // ...
+        // set-up prefix functions
+        this.prefixParseFns.set(TokenKind.TRUE, this.parseBooleanLiteral);
+        this.prefixParseFns.set(TokenKind.FALSE, this.parseBooleanLiteral);
+        // ...
+    }
+
+    // ...
+
+    parseBooleanLiteral = (): BooleanLiteral => {
+        const value = this.currTokenIs(TokenKind.TRUE);
+        return new BooleanLiteral(value);
+    };
+}
+```
+
+16. Parse grouped expressions.
+
+```ts
+it("parses expressions with precedence", () => {
+    const inputs = [
+        // ...
+        {
+            input: "1 + (2 + 3) + 4",
+            expected: "((1 + (2 + 3)) + 4)",
+        },
+        {
+            input: "(5 + 5) * 2",
+            expected: "((5 + 5) * 2)",
+        },
+        {
+            input: "2 / (5 + 5)",
+            expected: "(2 / (5 + 5))",
+        },
+        {
+            input: "-(5 + 5)",
+            expected: "(-(5 + 5))",
+        },
+        {
+            input: "!(true == true)",
+            expected: "(!(true == true))",
+        },
+    ];
+    // ...
+```
+
+For `LPAREN` token add a prefix parsing function `parseGroupedExpression`.
+
+```ts
+export class Parser {
+    // ...
+
+    constructor(public lexer: Lexer) {
+        // ...
+        // set-up prefix functions
+        this.prefixParseFns.set(TokenKind.LPAREN, this.parseGroupedExpression);
+    }
+
+    // ...
+    parseGroupedExpression = (): Expression => {
+        this.expectToken(TokenKind.LPAREN);
+
+        const expression = this.parseExpression(Precedence.LOWEST);
+
+        this.expectPeek(TokenKind.RPAREN);
+
+        return expression;
+    };
+```
+
+17. Parse if expressions.
+
+Add test helper `assertInfix` and use it in the `parses infix expression` test case.
+
+```ts
+// ast/utils.ts
+
+export type ExpectedNodeValue = number | string | boolean;
+
+export function assertInfix(
+    expression: Expression,
+    leftValue: ExpectedNodeValue,
+    operator: string,
+    rightValue: ExpectedNodeValue
+) {
+    assertNodeType(expression, InfixExpression);
+    assert.equal(expression.operator, operator);
+    assertLiteral(expression.left, leftValue);
+    assertLiteral(expression.right, rightValue);
+}
+```
+
+Add a new tests for if expressions.
+
+```ts
+// parser/parser.spec.ts
+
+it("parses if expressions", () => {
+    const input = `if (x < y) { x }`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assert.equal(program.statements.length, 1);
+    const statement = program.statements[0];
+
+    assertNodeType(statement, ExpressionStatement);
+
+    const { expression } = statement;
+    assertNodeType(expression, IfExpression);
+    assertInfix(expression.condition, "x", "<", "y");
+
+    assert.equal(expression.consequence.statements.length, 1);
+    assertNodeType(expression.consequence.statements[0], ExpressionStatement);
+    assertLiteral(expression.consequence.statements[0].expression, "x");
+});
+
+it("parses if expressions with alternative", () => {
+    const input = `if (x < y) { x } else { y }`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assert.equal(program.statements.length, 1);
+    const statement = program.statements[0];
+
+    assertNodeType(statement, ExpressionStatement);
+
+    const { expression } = statement;
+    assertNodeType(expression, IfExpression);
+    assertInfix(expression.condition, "x", "<", "y");
+
+    assert.equal(expression.consequence.statements.length, 1);
+    assertNodeType(expression.consequence.statements[0], ExpressionStatement);
+    assertLiteral(expression.consequence.statements[0].expression, "x");
+
+    assert.equal(expression.alternative!.statements.length, 1);
+    assertNodeType(expression.alternative!.statements[0], ExpressionStatement);
+    assertLiteral(expression.alternative!.statements[0].expression, "y");
+});
+```
+
+Declare the `IfExpression` class.
+
+Tip: You would need to create a new class for both branches. We are going to use it later for other `Expression`s.
+
+<details>
+<summary>code</summary>
+
+```ts
+// ast/ast.ts
+
+export class BlockStatement implements Statement {
+    kind = "BlockStatement" as const;
+
+    statements: Statement[];
+
+    constructor(statements: Statement[]) {
+        this.statements = statements;
+    }
+
+    display(): string {
+        let str = "{ ";
+        for (let stm of this.statements) {
+            str += stm.display();
+        }
+        str += " }";
+        return str;
+    }
+}
+
+export class IfExpression implements Expression {
+    kind = "IfExpression" as const;
+
+    condition: Expression;
+    consequence: BlockStatement;
+    alternative: BlockStatement | undefined;
+
+    constructor(
+        condition: Expression,
+        consequence: BlockStatement,
+        alternative: BlockStatement | undefined
+    ) {
+        this.condition = condition;
+        this.consequence = consequence;
+        this.alternative = alternative;
+    }
+
+    display(): string {
+        let str = `if ${this.condition.display()} ${this.consequence.display()}`;
+        if (this.alternative) {
+            str += `else ${this.alternative.display()}`;
+        }
+        return str;
+    }
+}
+```
+
+</details>
+<br>
+
+You know the drill: add a `parseIfExpression` method as a prefix function for `TokenKind.IF`
+
+<details>
+<summary>code</summary>
+
+```ts
+export class Parser {
+    // ...
+
+    constructor(public lexer: Lexer) {
+        // ...
+        // set-up prefix functions
+        this.prefixParseFns.set(TokenKind.IF, this.parseIfExpression);
+    }
+
+    // ...
+    // if (<expression>) <block-statement> [else <block-statement>]
+    parseIfExpression = (): IfExpression => {
+        this.expectToken(TokenKind.IF);
+        this.expectToken(TokenKind.LPAREN);
+
+        const condition = this.parseExpression(Precedence.LOWEST);
+
+        this.expectPeek(TokenKind.RPAREN);
+        this.expectPeek(TokenKind.LBRACE);
+
+        const consequence = this.parseBlockStatement();
+
+        let alternative = undefined;
+        if (this.peekTokenIs(TokenKind.ELSE)) {
+            this.expectPeek(TokenKind.ELSE);
+            this.expectPeek(TokenKind.LBRACE);
+            alternative = this.parseBlockStatement();
+        }
+
+        return new IfExpression(condition, consequence, alternative);
+    };
+
+    parseBlockStatement = (): BlockStatement => {
+        this.expectToken(TokenKind.LBRACE);
+        const statements: Statement[] = [];
+
+        while (
+            !this.currTokenIs(TokenKind.RBRACE) &&
+            !this.currTokenIs(TokenKind.EOF)
+        ) {
+            statements.push(this.parseStatement());
+            this.nextToken();
+        }
+
+        return new BlockStatement(statements);
+    };
+```
+
+</details>
+<br>
+
+18. Ready to parse some functions? Add tests first.
+
+```ts
+// parser/parser.ts
+it("parses function literals", () => {
+    const input = `fn(x, y) { x + y; }`;
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+
+    assertNodeType(program.statements[0], ExpressionStatement);
+    const { expression } = program.statements[0];
+
+    assertNodeType(expression, FunctionLiteral);
+    assertLiteral(expression.parameters[0], "x");
+    assertLiteral(expression.parameters[1], "y");
+
+    assertNodeType(expression.body.statements[0], ExpressionStatement);
+    const { expression: innerExpression } = expression.body.statements[0];
+
+    assertNodeType(innerExpression, InfixExpression);
+    assertInfix(innerExpression, "x", "+", "y");
+});
+
+it("parses function parameters", () => {
+    const inputs = [
+        { input: `fn() {}`, expectedParameters: [] },
+        { input: `fn(x) {}`, expectedParameters: ["x"] },
+        { input: `fn(x, y) {}`, expectedParameters: ["x", "y"] },
+    ];
+
+    for (const { input, expectedParameters } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+
+        assertNodeType(program.statements[0], ExpressionStatement);
+        const { expression } = program.statements[0];
+        assertNodeType(expression, FunctionLiteral);
+        assert.equal(expression.parameters.length, expectedParameters.length);
+
+        expectedParameters.forEach((param, i) => {
+            assertLiteral(expression.parameters[i], param);
+        });
+    }
+});
+```
+
+Declare `FunctionLiteral`.
+
+<details>
+<summary>code</summary>
+
+```ts
+// ast/ast.ts
+
+export class FunctionLiteral implements Expression {
+    kind = "FunctionLiteral" as const;
+
+    parameters: Identifier[];
+    body: BlockStatement;
+
+    constructor(parameters: Identifier[], body: BlockStatement) {
+        this.parameters = parameters;
+        this.body = body;
+    }
+
+    display(): string {
+        return `fn (${this.parameters
+            .map((x) => x.display())
+            .join(", ")}) ${this.body.display()}`;
+    }
+}
+```
+
+</details>
+<br>
+
+Add `parseFunctionLiteral` as a prefix function for `TokenKind.FUNCTION`.
+
+```ts
+export class Parser {
+    // ...
+
+    constructor(public lexer: Lexer) {
+        // ...
+        // set-up prefix functions
+        this.prefixParseFns.set(TokenKind.FUNCTION, this.parseFunctionLiteral);
+    }
+
+    // ...
+    // fn (<identifier>, <identifier>, ...) <block-statement>
+    // fn (<identifier>) <block-statement>
+    // fn () <block-statement>
+    parseFunctionLiteral = (): FunctionLiteral => {
+        this.expectPeek(TokenKind.LPAREN);
+
+        const parameters = this.parseFunctionParameters();
+
+        this.expectPeek(TokenKind.LBRACE);
+
+        const body = this.parseBlockStatement();
+
+        return new FunctionLiteral(parameters, body);
+    };
+
+    parseFunctionParameters = (): Identifier[] => {
+        if (this.peekTokenIs(TokenKind.RPAREN)) {
+            this.nextToken();
+            return [];
+        }
+        this.expectPeek(TokenKind.IDENT);
+
+        const parameters = [this.parseIdentifier()];
+
+        while (this.peekTokenIs(TokenKind.COMMA)) {
+            this.nextToken();
+            this.expectPeek(TokenKind.IDENT);
+            parameters.push(this.parseIdentifier());
+        }
+
+        this.expectPeek(TokenKind.RPAREN);
+
+        return parameters;
+    };
+}
+```
+
+19. Let's parse the function calls. We will call them "call expressions".
+
+Add tests
+
+```ts
+it("parses call expressions", () => {
+    const input = `add(1, 2 + 3, 4 * 5);`;
+    const program = parseProgram(input);
+
+    assertNodeType(program.statements[0], ExpressionStatement);
+    const { expression } = program.statements[0];
+    assertNodeType(expression, CallExpression);
+
+    assertLiteral(expression.callee, "add");
+    assertLiteral(expression.args[0], 1);
+    assertInfix(expression.args[1], 2, "+", 3);
+    assertInfix(expression.args[2], 4, "*", 5);
+});
+```
+
+Add `CallExpression` class.
+
+<details>
+<summary>code</summary>
+
+```ts
+export class CallExpression implements Expression {
+    kind = "CallExpression" as const;
+
+    callee: Expression;
+    args: Expression[];
+
+    constructor(
+        callee: Expression, // Identifier or FunctionLiteral
+        args: Expression[]
+    ) {
+        this.callee = callee;
+        this.args = args;
+    }
+
+    display(): string {
+        return `${this.callee.display()}(${this.args
+            .map((x) => x.display())
+            .join(", ")})`;
+    }
+}
+```
+
+</details>
+<br>
+
+Parse call expressions. How do we start parsing the call? What's the prefix/infix token?
+
+`add(1, 2)`
+
+<details>
+<summary>code</summary>
+
+```ts
+export class Parser {
+    constructor(public lexer: Lexer) {
+        // ...
+        this.infixParseFns.set(TokenKind.LPAREN, this.parseCallExpression);
+    }
+}
+```
+
+</details>
+<br>
+
+Why the error is about the `RPAREN`?
+
+`Expected peek token to be ")", but got ","`
+
+```ts
+enum Precedence {
+    // ...
+    CALL = 6,
+}
+
+const precedences = new Map<TokenKind, Precedence>([
+    // ...
+    [TokenKind.LPAREN, Precedence.CALL],
+]);
+```
+
+What other `Expression` is similar in parsing to `CallExpression`?
+
+```ts
+export class Parser {
+    // ...
+    parseCallExpression = (callee: Expression): CallExpression => {
+        const args = this.parseCallArguments();
+        return new CallExpression(callee, args);
+    };
+
+    parseCallArguments = (): Expression[] => {
+        if (this.peekTokenIs(TokenKind.RPAREN)) {
+            this.nextToken();
+            return [];
+        }
+        this.nextToken();
+        const args = [this.parseExpression(Precedence.LOWEST)];
+        while (this.peekTokenIs(TokenKind.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+            args.push(this.parseExpression(Precedence.LOWEST));
+        }
+        this.expectPeek(TokenKind.RPAREN);
+        return args;
+    };
+}
+```
+
+Let's add more tests to check for precedence.
+
+```ts
+it("parses expressions with precedence", () => {
+    // ...
+    const inputs = [
+        {
+            input: "a + add(b * c) + d",
+            expected: "((a + add((b * c))) + d)",
+        },
+        {
+            input: "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            expected: "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        },
+        {
+            input: "add(a + b + c * d / f + g)",
+            expected: "add((((a + b) + ((c * d) / f)) + g))",
+        },
+    ];
+    // ...
+});
+```
+
+20. We can come back to `LetStatement` and `ReturnStatement` and parse them properly.
+
+Update the tests.
+
+```ts
+it("parses let statements", () => {
+    const inputs = [
+        { input: `let x = 5;`, name: "x", value: 5 },
+        { input: `let y = true;`, name: "y", value: true },
+        { input: `let foobar = x;`, name: "foobar", value: "x" },
+    ];
+
+    for (let { name, value, input } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+
+        const statement = program.statements[0];
+
+        assertNodeType(statement, LetStatement);
+        assert.equal(statement.name.value, name);
+        assertLiteral(statement.value, value);
+    }
+});
+
+it("parses return statements", () => {
+    const inputs = [
+        { input: `return 5;`, value: 5 },
+        { input: `return true;`, value: true },
+        { input: `return x;`, value: "x" },
+    ];
+
+    for (let { input, value } of inputs) {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+        const program = parser.parseProgram();
+
+        const statement = program.statements[0];
+        assertNodeType(statement, ReturnStatement);
+        assertLiteral(statement.returnValue, value);
+    }
+});
+```
+
+Parse the `value` and `returnValue` respectively.
+
+<details>
+<summary>code</summary>
+
+```ts
+export class Parser {
+    // ...
+    // let <identifier> = <expression>;
+    parseLetStatement(): LetStatement {
+        this.expectPeek(TokenKind.IDENT);
+        const identifier = this.parseIdentifier();
+        this.expectPeek(TokenKind.ASSIGN);
+        this.nextToken();
+
+        const value = this.parseExpression(Precedence.LOWEST);
+
+        if (this.peekTokenIs(TokenKind.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return new LetStatement(identifier, value);
+    }
+
+    parseIdentifier = (): Identifier => {
+        return new Identifier(this.currToken.literal);
+    };
+
+    // return <expression>;
+    parseReturnStatement(): ReturnStatement {
+        this.expectToken(TokenKind.RETURN);
+
+        const returnValue = this.parseExpression(Precedence.LOWEST);
+
+        if (this.peekTokenIs(TokenKind.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return new ReturnStatement(returnValue);
+    }
+    // ...
+}
+```
+
+</details>
+<br>
+
+21. Add the `Parser` to the `REPL`.
+
+```ts
+// src/repl.ts
+
+//...
+const lexer = new Lexer(input);
+const parser = new Parser(lexer);
+
+try {
+    const program = parser.parseProgram();
+    console.log(program.display());
+} catch (err: any) {
+    console.log(err);
+}
+// ...
+```
+
+22. You did it! This was by far the most complex part of the Interpreter.
+Take a deep breath. Play with the REPL. Take a look at the code. Check the [diagram](https://www.tldraw.com/ro/38a7SSvjj2jarYqWr1UUW?d=v-6432.7415.13153.8893.page).
+
+## Evaluation
+
+1. Set-up for evaluating the simplest possible program: `"5"`
+
+-   Create a new `evaluator` module. Add the `evaluate` function that receives a `Node` as an argument. What do you think it should return?
+
+```ts
+// src/evaluator/evaluator.ts
+export function evaluate(node: Node): Value {
+    throw new Error(`Unknown node "${node.display()}"`);
+}
+```
+
+-   Declare the `Value` interface. What primitive values can we add considering the `Parser` functionality?
+
+```ts
+// src/evaluator/value.ts
+
+export type ValueType = "INTEGER" | "BOOLEAN" | "NULL";
+
+export interface Value {
+    type: ValueType;
+    inspect(): string;
+}
+
+export class Integer implements Value {
+    type = "INTEGER" as const;
+    value: number;
+
+    constructor(value: number) {
+        this.value = value;
+    }
+
+    inspect() {
+        return `INTEGER<${this.value}>`;
+    }
+}
+
+export class Boolean implements Value {
+    type = "BOOLEAN" as const;
+    value: boolean;
+
+    constructor(value: boolean) {
+        this.value = value;
+    }
+
+    inspect() {
+        return `BOOLEAN<${this.value}>`;
+    }
+}
+
+export class Null implements Value {
+    type = "NULL" as const;
+    value = null;
+
+    constructor() {}
+    inspect() {
+        return `NULL`;
+    }
+}
+```
+
+-   let's add a testing script `npm run test-eval` and add a simple test
+
+```ts
+// src/evaluator/evaluator.spec.ts
+
+it("evaluates integers", () => {
+    const value = evaluateProgram("5");
+
+    assertValueType(value, Integer);
+    assert.equal(value.value, 5);
+});
+
+export function evaluateProgram(input: string): Value {
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+    return evaluate(program);
+}
+```
+
+```ts
+// src/evaluator/value.ts
+
+// ...
+export function assertValueType<T extends Value>(
+    value: Value,
+    ExpectedClass: new (...args: any[]) => T
+): asserts value is T {
+    if (!(value instanceof ExpectedClass)) {
+        throw new Error(
+            `Value "${value.inspect?.() ?? value}" is not an instance of ${
+                ExpectedClass.name
+            }`
+        );
+    }
+}
+```
+
+2. Actually evaluate the simplest program
+
+-   In the `evaluate` function recursively evaluate nodes until it hits `IntegerLiteral`
+
+```ts
+// src/evaluator/evaluator.ts
+
+export function evaluate(node: Node): Value {
+    if (node instanceof Program) {
+        return evaluateStatements(node.statements);
+    }
+    if (node instanceof ExpressionStatement) {
+        return evaluate(node.expression);
+    }
+    if (node instanceof IntegerLiteral) {
+        return new Integer(node.value);
+    }
+    throw new Error(`Unknown node ${node.display()}"`);
+}
+
+function evaluateStatements(statements: Statement[]): Value {
+    let result: Value | undefined;
+    for (const statement of statements) {
+        result = evaluate(statement);
+    }
+    return result!;
+}
+```
+
+3. Let's make the REPL evaluate code
+
+```ts
+// src/repl.ts
+
+try {
+    const program = parser.parseProgram();
+    const value = evaluate(program);
+    console.log(value.inspect());
+    // ...
+} catch (err: any) {
+    // ...
+}
+```
+
+4. Same but different, evaluate booleans: `true`
+
+-   adjust tests
+
+```ts
+// src/evaluator/evaluator.spec.ts
+
+it("evaluates integers", () => {
+    const inputs = [
+        { input: "5", expected: 5 },
+        { input: "10", expected: 10 },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
+it("evaluates booleans", () => {
+    const inputs = [
+        { input: "true", expected: true },
+        { input: "false", expected: false },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
+function assertValue(value: Value, expectedValue: ExpectedValue) {
+    const expectedType = typeof expectedValue;
+    if (expectedType === "boolean") {
+        assertValueType(value, Bool);
+        assert.equal(value.value, expectedValue);
+    } else if (expectedType === "number") {
+        assertValueType(value, Integer);
+        assert.equal(value.value, expectedValue);
+    }
+}
+```
+
+-   evaluate `BooleanLiteral`
+
+```ts
+export function evaluate(node: Node): Value {
+    // ...
+    if (node instanceof BooleanLiteral) {
+        return new Bool(node.value);
+    }
+    // ...
+}
+```
+
+-   What potential problems do you see in this code?
+    How it will impact the memory consumption of the evaluation of the program?
+    What can we do to avoid creating _garbage_?
+
+```ts
+// src/evaluator/value.ts
+
+// ...
+export const TRUE = new Bool(true);
+export const FALSE = new Bool(false);
+export const NULL = new Null();
+```
+
+```ts
+// src/evaluator/evaluator.ts
+
+export function evaluate(node: Node): Value {
+    // ...
+    if (node instanceof BooleanLiteral) {
+        return new Bool(node.value);
+    }
+    // ...
+}
+
+// ...
+
+function boolToValue(value: boolean) {
+    return value ? TRUE : FALSE;
+}
+```
+
+5. Let's add operators into the mix. Evaluate: `!true;`
+
+-   add tests
+
+```ts
+it("evaluates logical negation", () => {
+    const inputs = [
+        { input: "!true", expected: false },
+        { input: "!false", expected: true },
+        { input: "!5", expected: false },
+        { input: "!!true", expected: true },
+        { input: "!!false", expected: false },
+        { input: "!!5", expected: true },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+```
+
+-   parse prefix expressions
+
+```ts
+// src/evaluator/evaluator.ts
+
+export function evaluate(node: Node): Value {
+    // ...
+    if (node instanceof PrefixExpression) {
+        const right = evaluate(node.right);
+        return evaluatePrefixExpression(node.operator, right);
+    }
+    // ...
+}
+
+// ...
+
+function evaluatePrefixExpression(operator: string, right: Value): Value {
+    if (operator === "!") {
+        return evaluateNotExpression(right);
+    }
+    throw new Error(`Unknown prefix operator "${operator}"`);
+}
+
+function evaluateNotExpression(value: Value): Value {
+    if (value === TRUE) {
+        return FALSE;
+    } else if (value === FALSE) {
+        return TRUE;
+    } else if (value === NULL) {
+        return TRUE;
+    }
+    return FALSE;
+}
+```
+
+6. Evaluate integer prefix operation: `-5;`
+
+-   add tests
+
+```ts
+it("evaluates integers", () => {
+    const inputs = [
+        // ...
+        { input: "-5", expected: -5 },
+        { input: "-10", expected: -10 },
+    ];
+    // ...
+});
+```
+
+-   handle the `-` operator
+
+```ts
+function evaluatePrefixExpression(operator: string, right: Value): Value {
+    // ...
+    if (operator === "-") {
+        return evaluateMinusExpression(right);
+    }
+    // ...
+}
+
+// ...
+
+function evaluateMinusExpression(value: Value): Value {
+    assertValueType(value, Integer);
+    return new Integer(-value.value);
+}
+```
+
+7. We are ready for infix expressions, let's start with integers
+
+-   add tests
+
+```ts
+it("evaluates integer expressions", () => {
+    const inputs = [
+        { input: "5 + 5 + 5 + 5 - 10", expected: 10 },
+        { input: "2 * 2 * 2 * 2 * 2", expected: 32 },
+        { input: "-50 + 100 + -50", expected: 0 },
+        { input: "5 * 2 + 10", expected: 20 },
+        { input: "5 + 2 * 10", expected: 25 },
+        { input: "20 + 2 * -10", expected: 0 },
+        { input: "50 / 2 * 2 + 10", expected: 60 },
+        { input: "2 * (5 + 10)", expected: 30 },
+        { input: "3 * 3 * 3 + 10", expected: 37 },
+        { input: "3 * (3 * 3) + 10", expected: 37 },
+        { input: "(5 + 10 * 2 + 15 / 3) * 2 + -10", expected: 50 },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
+it("evaluates boolean expressions", () => {
+    const inputs = [
+        { input: "1 < 2", expected: true },
+        { input: "1 > 2", expected: false },
+        { input: "1 < 1", expected: false },
+        { input: "1 > 1", expected: false },
+        { input: "1 == 1", expected: true },
+        { input: "1 != 1", expected: false },
+        { input: "1 == 2", expected: false },
+        { input: "1 != 2", expected: true },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+```
+
+-   evaluate integer infix expressions
+
+```ts
+export function evaluate(node: Node): Value {
+    // ...
+    if (node instanceof InfixExpression) {
+        const left = evaluate(node.left);
+        const right = evaluate(node.right);
+        return evaluateInfixExpression(node.operator, left, right);
+    }
+    // ...
+}
+
+// ...
+
+function evaluateInfixExpression(
+    operator: string,
+    left: Value,
+    right: Value
+): Value {
+    if (left instanceof Integer && right instanceof Integer) {
+        return evaluateIntegerInfixExpression(operator, left, right);
+    }
+
+    throw new Error(
+        `Infix operator type mismatch\n left: ${left.inspect()}\n right: ${right.inspect()}`
+    );
+}
+
+function evaluateIntegerInfixExpression(
+    operator: string,
+    left: Integer,
+    right: Integer
+): Value {
+    if (operator === "+") {
+        return numberToValue(left.value + right.value);
+    }
+    if (operator === "-") {
+        return numberToValue(left.value - right.value);
+    }
+    if (operator === "*") {
+        return numberToValue(left.value * right.value);
+    }
+    if (operator === "/") {
+        return numberToValue(left.value / right.value);
+    }
+    if (operator === "<") {
+        return boolToValue(left.value < right.value);
+    }
+    if (operator === ">") {
+        return boolToValue(left.value > right.value);
+    }
+    if (operator === "==") {
+        return boolToValue(left.value == right.value);
+    }
+    if (operator === "!=") {
+        return boolToValue(left.value != right.value);
+    }
+    throw new Error(`Unknown Integer infix operator ${operator}`);
+}
+
+function boolToValue(value: boolean) {
+    return value ? TRUE : FALSE;
+}
+
+function numberToValue(value: number) {
+    return new Integer(value);
+}
+```
+
+7. evaluate boolean infix expressions
+
+-   add tests
+
+```ts
+it("evaluates boolean expressions", () => {
+    const inputs = [
+        // ...
+        { input: "true == true", expected: true },
+        { input: "false == false", expected: true },
+        { input: "true == false", expected: false },
+        { input: "true != false", expected: true },
+        { input: "false != true", expected: true },
+        { input: "(1 < 2) == true", expected: true },
+        { input: "(1 < 2) == false", expected: false },
+        { input: "(1 > 2) == true", expected: false },
+        { input: "(1 > 2) == false", expected: true },
+    ];
+    // ...
+});
+```
+
+-   handle booleans in `evaluateInfixExpression`
+
+```ts
+// ...
+function evaluateInfixExpression(
+    operator: string,
+    left: Value,
+    right: Value
+): Value {
+    // ...
+    if (left instanceof Bool && right instanceof Bool) {
+        return evaluateBoolInfixExpression(operator, left, right);
+    }
+    // ...
+}
+
+// ...
+
+function evaluateBoolInfixExpression(
+    operator: string,
+    left: Bool,
+    right: Bool
+): Value {
+    if (operator === "<") {
+        return boolToValue(left.value < right.value);
+    }
+    if (operator === ">") {
+        return boolToValue(left.value > right.value);
+    }
+    if (operator === "==") {
+        return boolToValue(left.value == right.value);
+    }
+    if (operator === "!=") {
+        return boolToValue(left.value != right.value);
+    }
+    throw new Error(`Unknown Boolean infix operator ${operator}`);
+}
+```
+
+8. We can evaluate any (integer and boolean) expressions now! Try it in the REPL. If you ever wanted to write a calculator from scratch... Congratulations!
+   Now let's go into the control flow: evaluate if expressions!
+
+-   add tests
+
+```ts
+it("evaluates if expressions", () => {
+    const inputs = [
+        { input: "if (true) { 10 }", expected: 10 },
+        { input: "if (false) { 10 }", expected: null },
+        { input: "if (1) { 10 }", expected: 10 },
+        { input: "if (1 < 2) { 10 }", expected: 10 },
+        { input: "if (1 > 2) { 10 }", expected: null },
+        { input: "if (1 > 2) { 10 } else { 20 }", expected: 20 },
+        { input: "if (1 < 2) { 10 } else { 20 }", expected: 10 },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+
+function assertValue(value: Value, expectedValue: boolean | number | null) {
+    // ...
+    } else if (expectedValue === null) {
+        assertValueType(value, Null);
+        assert.equal(value.value, expectedValue);
+    } else {
+        throw new Error(
+            `Unknown value type "${expectedType}" of expected value "${expectedValue}"`
+        );
+    }
+}
+```
+
+-   evaluate if expressions
+
+```ts
+export function evaluate(node: Node): Value {
+    // ...
+    if (node instanceof IfExpression) {
+        return evaluateIfExpression(node);
+    }
+    if (node instanceof BlockStatement) {
+        return evaluateStatements(node.statements);
+    }
+    // ...
+}
+```
+
+9. We are almost ready for the grand finale: functions. Let's set-up the stage with support for return statements. For now, let's consider our whole program as "root function". How does a return statement affect the execution flow?
+
+-   add tests
+
+```ts
+it("evaluates return statements", () => {
+    const inputs = [
+        { input: "return 10;", expected: 10 },
+        { input: "return 10; 9;", expected: 10 },
+        { input: "return 2 * 5; 9;", expected: 10 },
+        { input: "9; return 2 * 5; 9;", expected: 10 },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+```
+
+-   add an inner `ReturnValue` data class and unwrap it in the `Program` evaluation
+
+```ts
+// src/evaluator/value.ts
+
+export class ReturnValue implements Value {
+    type = "RETURN_VALUE" as const;
+    innerValue: Value;
+
+    constructor(innerValue: Value) {
+        this.innerValue = innerValue;
+    }
+
+    inspect() {
+        return `RETURN_VALUE<${this.innerValue.inspect()}>`;
+    }
+}
+```
+
+```ts
+// src/evaluator/evaluator.ts
+
+export function evaluate(node: Node): Value {
+    // ...
+    if (node instanceof ReturnStatement) {
+        const innerValue = evaluate(node.returnValue);
+        return new ReturnValue(innerValue);
+    }
+    // ...
+}
+
+// ...
+
+function evaluateStatements(statements: Statement[]): Value {
+    let result: Value | undefined;
+    for (const statement of statements) {
+        result = evaluate(statement);
+        if (result instanceof ReturnValue) {
+            return result.innerValue;
+        }
+    }
+
+    return result!;
+}
+```
+
+10. You might notice that we still have a bug in our return statement evaluation. Can you figure out why this test fails?
+
+```ts
+it("evaluates return statements", () => {
+    const inputs = [
+        // ...
+        {
+            input: `
+            if (10 > 1) {
+                if (10 > 1) {
+                    return 10;
+                }
+                return 1; 
+            }`,
+            expected: 10,
+        },
+    ];
+    // ...
+});
+```
+
+Answer:
+The problem is that the return value doesn't bubble up to the top level but breaks only the block scope.
+
+```ts
+export function evaluate(node: Node): Value {
+    if (node instanceof Program) {
+        return evaluateProgram(node.statements);
+    }
+    // ...
+}
+
+function evaluateProgram(statements: Statement[]): Value {
+    const result = evaluateStatements(statements);
+    if (result instanceof ReturnValue) {
+        return result.innerValue;
+    }
+    return result;
+}
+
+function evaluateStatements(statements: Statement[]): Value {
+    // ...
+    for (const statement of statements) {
+        // ...
+        if (result instanceof ReturnValue) {
+            return result;
+        }
+    }
+    // ...
+}
+```
+
+11. Let's continue with let statements
+
+-   add tests
+
+```ts
+it("evaluates let statements", () => {
+    const inputs = [
+        { input: "let a = 5; a;", expected: 5 },
+        { input: "let a = 5 * 5; a;", expected: 25 },
+        { input: "let a = 5; let b = a; b;", expected: 5 },
+        { input: "let a = 5; let b = a; let c = a + b + 5; c;", expected: 15 },
+    ];
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+```
+
+-   The program is running within a certain environment that has a scope. We want to be able to save values by name and get their values later. Let's declare an `Environement` class that does exactly that.
+
+```ts
+// src/evaluator/value.ts
+export class Environment {
+    scope: Map<string, Value> = new Map();
+
+    getIdentifier = (name: string) => {
+        return this.scope.get(name);
+    };
+
+    setIdentifier = (name: string, val: Value) => {
+        return this.scope.set(name, val);
+    };
+}
+```
+
+-   Now for let statements save the identifier value and for identifiers get the saved value and return it
+
+```ts
+export function evaluate(node: Node, env: Environment): Value {
+    // ...
+    if (node instanceof LetStatement) {
+        const value = evaluate(node.value, env);
+        env.setIdentifier(node.name.value, value);
+        return NULL;
+    }
+    if (node instanceof Identifier) {
+        const value = env.getIdentifier(node.value);
+        if (value) {
+            return value;
+        }
+        throw new Error(`Used an undeclared value "${node.value}"`);
+    }
+    // ...
+}
+```
+
+Pass the environement to every `evaluate` call (don't forget about tests and REPL)
+
+12. We are now ready to tackle the hardest part of the evaluator: function declaration and application.
+
+-   We are going to introduce a new `Value` for the function
+
+```ts
+export class FunctionValue implements Value {
+    type = "FUNCTION" as const;
+
+    parameters: Identifier[];
+    body: BlockStatement;
+    env: Environment;
+
+    constructor(
+        parameters: Identifier[],
+        body: BlockStatement,
+        env: Environment
+    ) {
+        this.parameters = parameters;
+        this.body = body;
+        this.env = env;
+    }
+    inspect() {
+        return `fn (${this.parameters
+            .map((x) => x.display())
+            .join(", ")}) ${this.body.display()}`;
+    }
+}
+```
+
+-   Let's now add some tests
+
+```ts
+it("evaluates function application", () => {
+    const inputs = [
+        { input: "let identity = fn(x) { x; }; identity(5);", expected: 5 },
+        {
+            input: "let identity = fn(x) { return x; }; identity(5);",
+            expected: 5,
+        },
+        { input: "let double = fn(x) { x * 2; }; double(5);", expected: 10 },
+        { input: "let add = fn(x, y) { x + y; }; add(5, 5);", expected: 10 },
+        {
+            input: "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));",
+            expected: 20,
+        },
+        { input: "fn(x) { x; }(5)", expected: 5 },
+    ];
+
+    for (const { input, expected } of inputs) {
+        const value = evaluateProgram(input);
+        assertValue(value, expected);
+    }
+});
+```
+
+-   Naive function application that just passes the tests
+
+```ts
+export function evaluate(node: Node, env: Environment): Value {
+    // ...
+    if (node instanceof FunctionLiteral) {
+        return new FunctionValue(node.parameters, node.body, env);
+    }
+    if (node instanceof CallExpression) {
+        const callee = evaluate(node.callee, env);
+        const args = node.args.map((arg) => evaluate(arg, env));
+        return applyFunction(callee, args);
+    }
+    // ...
+}
+
+// ...
+
+function applyFunction(callee: Value, args: Value[]): Value {
+    assertValueType(callee, FunctionValue);
+    const env = callee.env;
+
+    callee.parameters.forEach((param, i) => {
+        env.setIdentifier(param.value, args[i]);
+    });
+
+    return evaluate(callee.body, callee.env);
+}
+```
+
+13. Let's figure out the issues with current implementation.
+
+-   Here is a test for it
+
+```ts
+it("evaluates function application", () => {
+    const inputs = [
+        // ...
+        {
+            input: `
+            let x = 5;
+            let f = fn() {
+                let x = 3;
+                return x; 
+            };
+            let y = f();
+            x
+            `,
+            expected: 5,
+        },
+    ];
+    // ...
+});
+```
+
+-   On function application (function call) we need to create a parent environement for the function. If a variable is not declared in the function scope it will check every parent scope until it reaches the program root.
+
+```ts
+// src/evaluator/value.ts
+
+export class Environment {
+    scope: Map<string, Value> = new Map();
+    parentEnv: Environment | undefined;
+
+    static withParent(parentEnv: Environment) {
+        const env = new Environment();
+        env.parentEnv = parentEnv;
+        return env;
+    }
+
+    getIdentifier = (name: string): Value | undefined => {
+        const value = this.scope.get(name);
+        if (!value && this.parentEnv) {
+            return this.parentEnv.getIdentifier(name);
+        }
+        return value;
+    };
+    // ...
+}
+```
+
+```ts
+// src/evaluator/evaluator.ts
+
+function applyFunction(callee: Value, args: Value[]): Value {
+    // ...
+    const env = Environment.withParent(callee.env);
+
+    // ...
+
+    return evaluate(callee.body, env);
+}
+```
+
+14. There is another issue we have.
+
+```ts
+it("evaluates function application", () => {
+    const inputs = [
+        // ...
+        {
+            input: `
+            let fa = fn(x, y) {
+                return x + y;
+            };
+            let fb = fn(x, y) {
+                let z = fa(x, y);
+                return z + x;
+            };
+            fb(1, 2)`,
+            expected: 4,
+        },
+    ];
+    // ...
+});
+```
+
+The function application doesn't handle the return value. Let's unwrap it.
+
+```ts
+function applyFunction(callee: Value, args: Value[]): Value {
+    // ...
+    const result = evaluate(callee.body, env);
+
+    if (result instanceof ReturnValue) {
+        return result.innerValue;
+    }
+    return result;
+}
+```
+
+15. Let's add another test case just to be sure
+
+```ts
+it("evaluates function application", () => {
+    const inputs = [
+        // ...
+        {
+            input: `
+            let newAdder = fn(x) {
+                fn(y) { x + y };
+            };
+            let addTwo = newAdder(2);
+            addTwo(2);`,
+            expected: 4,
+        },
+    ];
+    // ...
+});
+```
+
+The great thing about this test case is that we don't need to write code. It just passes! We have higher-order functions and return last expression statement!
+
+16. We are ready to write the program we started with! Let's add the last two tests: `fibonacci` and `factorial`
+
+```ts
+it("fibonacci", () => {
+    const input = `
+        let fibonacci = fn(x) {
+            if (x < 2) {
+                return x;
+            }
+            return fibonacci(x - 1) + fibonacci(x - 2);
+        };
+        fibonacci(10)
+    `;
+
+    const value = evaluateProgram(input);
+
+    assertValue(value, 55);
+});
+
+it("factorial", () => {
+    const input = `
+        let factorial = fn(x) {
+            if (x < 2) {
+                return 1;
+            }
+            return x * factorial(x - 1);
+        };
+        factorial(10)
+    `;
+
+    const value = evaluateProgram(input);
+
+    assertValue(value, 3628800);
+});
+```
+
+Hooray! You did it! You wrote an interpreter that contains: operation precendence, control flow, functions, and closures. What a journey!
+
+The only remaining things are: strings, string operations, floats, arrays, hashmaps, built-ins, classes...

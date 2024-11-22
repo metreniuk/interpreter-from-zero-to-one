@@ -3481,3 +3481,9 @@ it("factorial", () => {
 Hooray! You did it! You wrote an interpreter that contains: operation precendence, control flow, functions, and closures. What a journey!
 
 The only remaining things are: strings, string operations, floats, arrays, hashmaps, built-ins, classes... The good news is that you have all the tools to implement them on you own. Good luck!
+
+
+### References
+1. [Writing An Interpreter In Go](https://interpreterbook.com/)
+2. [Simple but Powerful Pratt Parsing](https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html)
+3. [Top Down Operator Precedence. Vaughan R. Pratt](https://tdop.github.io/)

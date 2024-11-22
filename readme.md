@@ -1612,7 +1612,7 @@ export class Parser {
 }
 ```
 
-Account for precedence in expression parsing. 
+Account for precedence in expression parsing.
 
 **Tip:** You can change `parseExpression` method to accept `precedence: Precedence` parameter and TypeScript will show all the places where it needs to be adjusted.
 
@@ -2397,13 +2397,15 @@ try {
 ```
 
 22. You did it! This was by far the most complex part of the Interpreter.
-Take a deep breath. Play with the REPL. Take a look at the code. Check the [diagram](https://www.tldraw.com/ro/38a7SSvjj2jarYqWr1UUW?d=v-6432.7415.13153.8893.page).
+    Take a deep breath. Play with the REPL. Take a look at the code. Check the [diagram](https://www.tldraw.com/ro/38a7SSvjj2jarYqWr1UUW?d=v-6432.7415.13153.8893.page).
 
 ## Evaluation
 
 1. Set-up for evaluating the simplest possible program: `"5"`
 
--   Create a new `evaluator` module. Add the `evaluate` function that receives a `Node` as an argument. What do you think it should return?
+Create a new `evaluator` module (`src/evaluator/evaluator.ts`).
+
+Add the `evaluate` function that receives a `Node` as an argument and return a `Value`.
 
 ```ts
 // src/evaluator/evaluator.ts
@@ -2412,7 +2414,10 @@ export function evaluate(node: Node): Value {
 }
 ```
 
--   Declare the `Value` interface. What primitive values can we add considering the `Parser` functionality?
+Let's define the `Value` interface. What primitive values can we add considering the `Parser` functionality?
+
+<details>
+<summary>code</summary>
 
 ```ts
 // src/evaluator/value.ts
@@ -2426,6 +2431,7 @@ export interface Value {
 
 export class Integer implements Value {
     type = "INTEGER" as const;
+
     value: number;
 
     constructor(value: number) {
@@ -2437,8 +2443,9 @@ export class Integer implements Value {
     }
 }
 
-export class Boolean implements Value {
+export class Bool implements Value {
     type = "BOOLEAN" as const;
+
     value: boolean;
 
     constructor(value: boolean) {
@@ -2452,6 +2459,7 @@ export class Boolean implements Value {
 
 export class Null implements Value {
     type = "NULL" as const;
+
     value = null;
 
     constructor() {}
@@ -2461,7 +2469,18 @@ export class Null implements Value {
 }
 ```
 
--   let's add a testing script `npm run test-eval` and add a simple test
+</details>
+<br>
+
+Let's add a testing script `npm run test-eval` and add a simple test
+
+```json
+{
+    "scripts": {
+        "test-eval": "vitest ./src/evaluator/evaluator.spec.ts"
+    }
+}
+```
 
 ```ts
 // src/evaluator/evaluator.spec.ts
@@ -2481,6 +2500,8 @@ export function evaluateProgram(input: string): Value {
 }
 ```
 
+Let's add `assertValueType` that is similar to the one in `parser.spec.ts`.
+
 ```ts
 // src/evaluator/value.ts
 
@@ -2499,9 +2520,14 @@ export function assertValueType<T extends Value>(
 }
 ```
 
-2. Actually evaluate the simplest program
+2. Time to evaluate the simplest program: `5;`
 
--   In the `evaluate` function recursively evaluate nodes until it hits `IntegerLiteral`
+In the `evaluate` function recursively evaluate nodes until you hit `IntegerLiteral`.
+
+**Tip:** use `console.log` and the errors to guide your way through
+
+<details>
+<summary>code</summary>
 
 ```ts
 // src/evaluator/evaluator.ts
@@ -2528,7 +2554,10 @@ function evaluateStatements(statements: Statement[]): Value {
 }
 ```
 
-3. Let's make the REPL evaluate code
+</details>
+<br>
+
+3. Let's make our REPL fulfill its purpose by evaluating the program!
 
 ```ts
 // src/repl.ts
@@ -2543,12 +2572,23 @@ try {
 }
 ```
 
-4. Same but different, evaluate booleans: `true`
+4. Same but different: evaluate `true;`
 
--   adjust tests
+First, let's adjust tests to use `assertValue`. Now add a basic boolean test.
 
 ```ts
 // src/evaluator/evaluator.spec.ts
+
+function assertValue(value: Value, expectedValue: ExpectedValue) {
+    const expectedType = typeof expectedValue;
+    if (expectedType === "boolean") {
+        assertValueType(value, Bool);
+        assert.equal(value.value, expectedValue);
+    } else if (expectedType === "number") {
+        assertValueType(value, Integer);
+        assert.equal(value.value, expectedValue);
+    }
+}
 
 it("evaluates integers", () => {
     const inputs = [
@@ -2573,20 +2613,9 @@ it("evaluates booleans", () => {
         assertValue(value, expected);
     }
 });
-
-function assertValue(value: Value, expectedValue: ExpectedValue) {
-    const expectedType = typeof expectedValue;
-    if (expectedType === "boolean") {
-        assertValueType(value, Bool);
-        assert.equal(value.value, expectedValue);
-    } else if (expectedType === "number") {
-        assertValueType(value, Integer);
-        assert.equal(value.value, expectedValue);
-    }
-}
 ```
 
--   evaluate `BooleanLiteral`
+evaluate `BooleanLiteral` using our `Bool` value.
 
 ```ts
 export function evaluate(node: Node): Value {
@@ -2598,9 +2627,24 @@ export function evaluate(node: Node): Value {
 }
 ```
 
--   What potential problems do you see in this code?
-    How it will impact the memory consumption of the evaluation of the program?
-    What can we do to avoid creating _garbage_?
+What potential problems do you see in this code? How it will impact the memory consumption of the evaluation of the program?
+What can we do to avoid creating _garbage_?
+
+<details>
+<summary>tip</summary>
+Consider the case when we have this line:
+
+```ts
+let x = true || false || true || false || true;
+```
+
+How many `Bool` instances would we create?
+
+</details>
+<br>
+
+<details>
+<summary>code</summary>
 
 ```ts
 // src/evaluator/value.ts
@@ -2629,9 +2673,12 @@ function boolToValue(value: boolean) {
 }
 ```
 
+</details>
+<br>
+
 5. Let's add operators into the mix. Evaluate: `!true;`
 
--   add tests
+Add tests
 
 ```ts
 it("evaluates logical negation", () => {
@@ -2650,7 +2697,8 @@ it("evaluates logical negation", () => {
 });
 ```
 
--   parse prefix expressions
+Let's parse `PrefixExpression`. We will add a function `evaluatePrefixExpression` which accepts an `operator: string` and `right: Value`.
+Notice that it returns a `Value`. That's a pattern that we will use for all `evaluate*` functions.
 
 ```ts
 // src/evaluator/evaluator.ts
@@ -2685,9 +2733,13 @@ function evaluateNotExpression(value: Value): Value {
 }
 ```
 
+We already made an assumption about our program execution in `evaluateNotExpression`.
+We've added coercion to boolean for the `!` operator. You can choose to throw an error.
+It's up to you, it's your language now!
+
 6. Evaluate integer prefix operation: `-5;`
 
--   add tests
+Add tests
 
 ```ts
 it("evaluates integers", () => {
@@ -2700,7 +2752,12 @@ it("evaluates integers", () => {
 });
 ```
 
--   handle the `-` operator
+Handle the `-` operator in `evaluatePrefixExpression`. It's important to return `Value`.
+
+**Tip:** You might want to use `assertValueType` to assure TypeScript that you can create the `Integer` value.
+
+<details>
+<summary>code</summary>
 
 ```ts
 function evaluatePrefixExpression(operator: string, right: Value): Value {
@@ -2719,9 +2776,10 @@ function evaluateMinusExpression(value: Value): Value {
 }
 ```
 
-7. We are ready for infix expressions, let's start with integers
+</details>
+<br>
 
--   add tests
+7. We are ready for infix expressions, let's start with integers and add some tests.
 
 ```ts
 it("evaluates integer expressions", () => {
@@ -2764,7 +2822,14 @@ it("evaluates boolean expressions", () => {
 });
 ```
 
--   evaluate integer infix expressions
+This is a bit more involved than prefix expressions. To handle `InfixExpression` you would need to:
+
+-   `evaluate` the `node`'s properties `left` and `right`.
+-   Check that both `Value`s are `Integer`, overwise throw a type error.
+-   For each operator use corresponding TypeScript operators. You might notice that one `Integer` operator doesn't map nicely to the JavaScript runtime and needs adjustments.
+
+<details>
+<summary>code</summary>
 
 ```ts
 export function evaluate(node: Node): Value {
@@ -2808,7 +2873,7 @@ function evaluateIntegerInfixExpression(
         return numberToValue(left.value * right.value);
     }
     if (operator === "/") {
-        return numberToValue(left.value / right.value);
+        return numberToValue(Math.floor(left.value / right.value));
     }
     if (operator === "<") {
         return boolToValue(left.value < right.value);
@@ -2834,9 +2899,10 @@ function numberToValue(value: number) {
 }
 ```
 
-7. evaluate boolean infix expressions
+</details>
+<br>
 
--   add tests
+7. Let's do the same for boolean infix expressions, starting with tests.
 
 ```ts
 it("evaluates boolean expressions", () => {
@@ -2856,7 +2922,10 @@ it("evaluates boolean expressions", () => {
 });
 ```
 
--   handle booleans in `evaluateInfixExpression`
+Handle booleans in `evaluateInfixExpression`
+
+<details>
+<summary>code</summary>
 
 ```ts
 // ...
@@ -2895,10 +2964,16 @@ function evaluateBoolInfixExpression(
 }
 ```
 
-8. We can evaluate any (integer and boolean) expressions now! Try it in the REPL. If you ever wanted to write a calculator from scratch... Congratulations!
-   Now let's go into the control flow: evaluate if expressions!
+</details>
+<br>
 
--   add tests
+**Note:** in our language the evaluation is more restrictive than in JavaScript. As a fun exercise you can support coercion for more operators. For example, `true != 4` now throws but is a completely reasonable code.
+
+We can evaluate any (integer and boolean) expressions now! Try it in the REPL. If you ever wanted to write a calculator from scratch... Congratulations!
+
+8. Now let's go into the control flow and evaluate if expressions!
+
+Add new tests
 
 ```ts
 it("evaluates if expressions", () => {
@@ -2930,7 +3005,7 @@ function assertValue(value: Value, expectedValue: boolean | number | null) {
 }
 ```
 
--   evaluate if expressions
+We can re-use `evaluateStatements` from previous step to evaluate `BlockStatement`.
 
 ```ts
 export function evaluate(node: Node): Value {
@@ -2943,11 +3018,26 @@ export function evaluate(node: Node): Value {
     }
     // ...
 }
+
+function evaluateIfExpression(node: IfExpression): Value {
+    const condition = evaluate(node.condition);
+    if (isTruthy(condition)) {
+        return evaluate(node.consequence);
+    } else if (node.alternative) {
+        return evaluate(node.alternative);
+    }
+    return NULL;
+}
+
+function isTruthy(condition: Value): boolean {
+    const isFalsy = condition === FALSE || condition === NULL;
+    return !isFalsy;
+}
 ```
 
-9. We are almost ready for the grand finale: functions. Let's set-up the stage with support for return statements. For now, let's consider our whole program as "root function". How does a return statement affect the execution flow?
+9. We are almost ready for the final boss: functions. Let's set-up the stage with support for return statements. For now, let's consider our whole program as "root function".
 
--   add tests
+How does a return statement affect the execution flow?
 
 ```ts
 it("evaluates return statements", () => {
@@ -2964,13 +3054,14 @@ it("evaluates return statements", () => {
 });
 ```
 
--   add an inner `ReturnValue` data class and unwrap it in the `Program` evaluation
+We will introduce an inner `ReturnValue` data class and unwrap it in the `Program` evaluation.
 
 ```ts
 // src/evaluator/value.ts
 
 export class ReturnValue implements Value {
     type = "RETURN_VALUE" as const;
+
     innerValue: Value;
 
     constructor(innerValue: Value) {
@@ -2982,6 +3073,8 @@ export class ReturnValue implements Value {
     }
 }
 ```
+
+Handle `ReturnStatement` in `evaluate`. We will add an early return if the result of `evaluate(statement)` is `ReturnValue`. Unwrap it and return the `innerValue`.
 
 ```ts
 // src/evaluator/evaluator.ts
@@ -3031,8 +3124,10 @@ it("evaluates return statements", () => {
 });
 ```
 
-Answer:
-The problem is that the return value doesn't bubble up to the top level but breaks only the block scope.
+<details>
+<summary>answer & code</summary>
+
+The problem is that the return value doesn't bubble up to the top level but breaks only the block scope. We will add a new function that will do the unwraping only in the right context: `evaluateProgram`.
 
 ```ts
 export function evaluate(node: Node): Value {
@@ -3052,19 +3147,17 @@ function evaluateProgram(statements: Statement[]): Value {
 
 function evaluateStatements(statements: Statement[]): Value {
     // ...
-    for (const statement of statements) {
-        // ...
-        if (result instanceof ReturnValue) {
-            return result;
-        }
+    if (result instanceof ReturnValue) {
+        return result;
     }
     // ...
 }
 ```
 
-11. Let's continue with let statements
+</details>
+<br>
 
--   add tests
+11. Let's continue with let statements.
 
 ```ts
 it("evaluates let statements", () => {
@@ -3081,7 +3174,7 @@ it("evaluates let statements", () => {
 });
 ```
 
--   The program is running within a certain environment that has a scope. We want to be able to save values by name and get their values later. Let's declare an `Environement` class that does exactly that.
+The program is running within a certain **environment** that has a **scope**. We want to be able to save values by name and get their values later. Let's declare an `Environement` class that does exactly that.
 
 ```ts
 // src/evaluator/value.ts
@@ -3098,7 +3191,9 @@ export class Environment {
 }
 ```
 
--   Now for let statements save the identifier value and for identifiers get the saved value and return it
+Now for `LetStatement` node save the identifier value in the `Environment` and for `Identifier` get the value from `Environment` and return it.
+
+To accomplish this we will add a second parameter to the `evaluate` function. Your `evaluator.ts` will become red from errors and that's fine. Just pass the `Environment` to every `evaluate` call.
 
 ```ts
 export function evaluate(node: Node, env: Environment): Value {
@@ -3119,11 +3214,11 @@ export function evaluate(node: Node, env: Environment): Value {
 }
 ```
 
-Pass the environement to every `evaluate` call (don't forget about tests and REPL)
+**Note:** don't forget to pass the `Environement` in tests and REPL.
 
-12. We are now ready to tackle the hardest part of the evaluator: function declaration and application.
+12. We are now **ready** to tackle the hardest part of the evaluator: function declaration and application.
 
--   We are going to introduce a new `Value` for the function
+We are going to introduce a new `Value` for the function: `FunctionValue`.
 
 ```ts
 export class FunctionValue implements Value {
@@ -3133,11 +3228,7 @@ export class FunctionValue implements Value {
     body: BlockStatement;
     env: Environment;
 
-    constructor(
-        parameters: Identifier[],
-        body: BlockStatement,
-        env: Environment
-    ) {
+    constructor(parameters: Identifier[], body: BlockStatement) {
         this.parameters = parameters;
         this.body = body;
         this.env = env;
@@ -3150,7 +3241,7 @@ export class FunctionValue implements Value {
 }
 ```
 
--   Let's now add some tests
+Let's add some tests.
 
 ```ts
 it("evaluates function application", () => {
@@ -3176,7 +3267,11 @@ it("evaluates function application", () => {
 });
 ```
 
--   Naive function application that just passes the tests
+Let's handle `FunctionLiteral` and `CallExpression` in `evaluate`. We will create a function `applyFunction` that will:
+
+-   check that the `callee` is a `FunctionValue`
+-   set all the function parameters to the arguments values through `env`
+-   evaluate the `body` of the function
 
 ```ts
 export function evaluate(node: Node, env: Environment): Value {
@@ -3206,9 +3301,7 @@ function applyFunction(callee: Value, args: Value[]): Value {
 }
 ```
 
-13. Let's figure out the issues with current implementation.
-
--   Here is a test for it
+13. Let's figure out the issues with current implementation. Here is a test for it.
 
 ```ts
 it("evaluates function application", () => {
@@ -3231,7 +3324,14 @@ it("evaluates function application", () => {
 });
 ```
 
--   On function application (function call) we need to create a parent environement for the function. If a variable is not declared in the function scope it will check every parent scope until it reaches the program root.
+What's the problem?
+
+<details>
+<summary>code</summary>
+
+On function application (function call) we need to create a separate `Environement` for the function.
+
+**Note:** If a variable is not declared in the function scope it will check every parent scope until it reaches the program root.
 
 ```ts
 // src/evaluator/value.ts
@@ -3270,6 +3370,9 @@ function applyFunction(callee: Value, args: Value[]): Value {
 }
 ```
 
+</details>
+<br>
+
 14. There is another issue we have.
 
 ```ts
@@ -3307,7 +3410,7 @@ function applyFunction(callee: Value, args: Value[]): Value {
 }
 ```
 
-15. Let's add another test case just to be sure
+15. Time to support higher order function. Start with a test.
 
 ```ts
 it("evaluates function application", () => {
@@ -3316,7 +3419,7 @@ it("evaluates function application", () => {
         {
             input: `
             let newAdder = fn(x) {
-                fn(y) { x + y };
+                return fn(y) { x + y };
             };
             let addTwo = newAdder(2);
             addTwo(2);`,
@@ -3327,9 +3430,16 @@ it("evaluates function application", () => {
 });
 ```
 
-The great thing about this test case is that we don't need to write code. It just passes! We have higher-order functions and return last expression statement!
+It passes! It turned out that we didn't have to do anything, because functions are just values. We support higher-order functions!
 
-16. We are ready to write the program we started with! Let's add the last two tests: `fibonacci` and `factorial`
+**Note:** if you remove the `return` keyword (`return fn(y) { x + y };` -> `fn(y) { x + y };`) the test will pass anyway. Do you know why?
+
+16. We are ready to write a program in our own langugage that we just created! I know two programs that we can write: `fibonacci` and `factorial`.
+
+Add them as separate tests for convenience.
+
+<details>
+<summary>code</summary>
 
 ```ts
 it("fibonacci", () => {
@@ -3365,6 +3475,9 @@ it("factorial", () => {
 });
 ```
 
+</details>
+<br>
+
 Hooray! You did it! You wrote an interpreter that contains: operation precendence, control flow, functions, and closures. What a journey!
 
-The only remaining things are: strings, string operations, floats, arrays, hashmaps, built-ins, classes...
+The only remaining things are: strings, string operations, floats, arrays, hashmaps, built-ins, classes... The good news is that you have all the tools to implement them on you own. Good luck!
